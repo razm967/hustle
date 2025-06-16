@@ -1,103 +1,129 @@
-import Image from "next/image";
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { ArrowRight, Zap, Target, Users } from "lucide-react"
+import Link from "next/link"
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 dark:from-blue-950 dark:via-gray-900 dark:to-blue-900">
+      {/* Navigation */}
+      <nav className="container mx-auto px-6 py-6 flex justify-between items-center">
+        <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+          Hustle
+        </div>
+        <div className="hidden md:flex space-x-8">
+          <a href="#features" className="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100 transition-colors">
+            Features
           </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
+          <Link href="/about" className="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100 transition-colors">
+            About
+          </Link>
+          <a href="#contact" className="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100 transition-colors">
+            Contact
           </a>
         </div>
+      </nav>
+
+      {/* Hero Section */}
+      <main className="container mx-auto px-6 py-20">
+        <div className="text-center max-w-4xl mx-auto">
+          <h1 className="text-5xl md:text-7xl font-bold text-blue-900 dark:text-blue-100 mb-6 leading-tight">
+            Turn Your
+            <span className="bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent"> Dreams </span>
+            Into Reality
+          </h1>
+          <p className="text-xl text-blue-700 dark:text-blue-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+            Discover the power of focused action. Transform your ideas into achievements with our minimalist approach to productivity.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+            <Button 
+              size="lg" 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg group"
+            >
+              Get Started
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-950 px-8 py-3 text-lg"
+            >
+              Learn More
+            </Button>
+          </div>
+        </div>
+
+        {/* Features Grid */}
+        <div id="features" className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mt-20">
+          <Card className="border-blue-200 dark:border-blue-800 bg-white/50 dark:bg-blue-900/20 backdrop-blur-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Zap className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-blue-900 dark:text-blue-100 mb-3">
+                Lightning Fast
+              </h3>
+              <p className="text-blue-700 dark:text-blue-300 leading-relaxed">
+                Streamlined workflows that help you accomplish more in less time, without the complexity.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-blue-200 dark:border-blue-800 bg-white/50 dark:bg-blue-900/20 backdrop-blur-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Target className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-blue-900 dark:text-blue-100 mb-3">
+                Focused Approach
+              </h3>
+              <p className="text-blue-700 dark:text-blue-300 leading-relaxed">
+                Clear, actionable strategies that cut through the noise and drive real results.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-blue-200 dark:border-blue-800 bg-white/50 dark:bg-blue-900/20 backdrop-blur-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-blue-900 dark:text-blue-100 mb-3">
+                Community Driven
+              </h3>
+              <p className="text-blue-700 dark:text-blue-300 leading-relaxed">
+                Join thousands of achievers who share your vision and support your journey.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* CTA Section */}
+        <div className="text-center mt-20">
+          <div className="bg-white/60 dark:bg-blue-900/30 backdrop-blur-sm rounded-2xl p-12 border border-blue-200 dark:border-blue-800 max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold text-blue-900 dark:text-blue-100 mb-4">
+              Ready to Start Your Journey?
+            </h2>
+            <p className="text-blue-700 dark:text-blue-300 mb-8 text-lg">
+              Join the movement of people who believe in the power of simple, focused action.
+            </p>
+            <Button 
+              size="lg" 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 text-lg"
+            >
+              Begin Your Hustle
+            </Button>
+          </div>
+        </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* Footer */}
+      <footer className="container mx-auto px-6 py-12 mt-20 border-t border-blue-200 dark:border-blue-800">
+        <div className="text-center text-blue-600 dark:text-blue-400">
+          <p>&copy; 2024 Hustle. Built with passion and purpose.</p>
+        </div>
       </footer>
     </div>
-  );
+  )
 }
