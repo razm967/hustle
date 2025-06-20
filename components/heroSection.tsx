@@ -2,34 +2,24 @@
 
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Menu, X, Home, User, Info, Mail, Briefcase, Search, DollarSign, Settings } from "lucide-react"
+import { Menu, X, Home, User, Info, LogOut } from "lucide-react"
 import Link from "next/link"
+import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
 
 // Navigation items for different user types
 const getNavigationItems = (userType: 'guest' | 'employer' | 'employee') => {
   switch (userType) {
     case 'employer':
-      return [
-        { href: "/employer", label: "Dashboard", icon: Home },
-        { href: "/employer/post-job", label: "Post Job", icon: Briefcase },
-        { href: "/employer/applications", label: "Applications", icon: User },
-        { href: "/employer/payments", label: "Payments", icon: DollarSign },
-        { href: "/employer/settings", label: "Settings", icon: Settings },
-      ]
+      return [] // Clean - no navigation items, only sign out
     case 'employee':
-      return [
-        { href: "/employee", label: "Dashboard", icon: Home },
-        { href: "/employee/browse-jobs", label: "Browse Jobs", icon: Search },
-        { href: "/employee/applications", label: "My Applications", icon: User },
-        { href: "/employee/earnings", label: "Earnings", icon: DollarSign },
-        { href: "/employee/profile", label: "Profile", icon: Settings },
-      ]
+      return [] // Clean - no navigation items, only sign out
     default: // guest
       return [
         { href: "/", label: "Home", icon: Home },
-        { href: "/about", label: "About", icon: Info },
-        { href: "/signin", label: "Sign In", icon: User },
-        { href: "/contact", label: "Contact", icon: Mail },
+        { href: "/about", label: "About Us", icon: Info },
+        { href: "/auth/signin", label: "Sign In", icon: User },
+        { href: "/auth/signup", label: "Create Account", icon: User },
       ]
   }
 }
@@ -50,6 +40,12 @@ export default function Header({
   subtitle = 'Welcome back!'
 }: HeaderProps) {
   const navigationItems = getNavigationItems(userType)
+  const router = useRouter()
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
+  }
   
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 relative">
@@ -62,7 +58,7 @@ export default function Header({
               <Avatar className="h-10 w-10">
                 <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
                 <AvatarFallback className="bg-blue-600 text-white">
-                  JD
+                  {userType === 'employer' ? 'EM' : userType === 'employee' ? 'EE' : 'HU'}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -79,7 +75,8 @@ export default function Header({
           {/* Right side - Navigation */}
           {/* Desktop Navigation (static on wider screens) */}
           <nav className="hidden lg:flex items-center space-x-6">
-            {navigationItems.map((item) => {
+            {/* Navigation Items for Guests */}
+            {userType === 'guest' && navigationItems.map((item) => {
               const IconComponent = item.icon
               return (
                 <Link
@@ -92,6 +89,17 @@ export default function Header({
                 </Link>
               )
             })}
+
+            {/* Sign Out Button for Authenticated Users */}
+            {(userType === 'employer' || userType === 'employee') && (
+              <button
+                onClick={handleSignOut}
+                className="flex items-center space-x-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Sign Out</span>
+              </button>
+            )}
           </nav>
 
           {/* Mobile Hamburger Menu Button */}

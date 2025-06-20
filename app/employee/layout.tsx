@@ -28,35 +28,27 @@ export default function EmployeeLayout({
   };
 
   return (
-    <html lang="en">
-      <head>
-        <title>Employee Dashboard - Hustle</title>
-        <meta name="description" content="Find local job opportunities and earn money from one-time tasks" />
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900`}
-      >
-        {/* HeroSection Component */}
-        <HeroSection 
-          isMobileMenuOpen={isMobileMenuOpen} 
-          toggleMobileMenu={toggleMobileMenu}
-          userType="employee"
-          title="Employee Dashboard"
-          subtitle="Find jobs & track earnings"
-        />
+    <>
+      {/* HeroSection Component - Clean with only sign out */}
+      <HeroSection 
+        isMobileMenuOpen={isMobileMenuOpen} 
+        toggleMobileMenu={toggleMobileMenu}
+        userType="employee"
+        title="Employee Dashboard"
+        subtitle="Find jobs & track earnings"
+      />
 
-        {/* Employee Sidebar Component */}
-        <Sidebar 
-          isMobileMenuOpen={isMobileMenuOpen} 
-          setIsMobileMenuOpen={setIsMobileMenuOpen}
-          userType="employee"
-        />
+      {/* Employee Sidebar Component - Clean with only sign out */}
+      <Sidebar 
+        isMobileMenuOpen={isMobileMenuOpen} 
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+        userType="employee"
+      />
 
-        {/* Main Content */}
-        <main>
-          {children}
-        </main>
-      </body>
-    </html>
+      {/* Main Content */}
+      <div className="employee-content">
+        {children}
+      </div>
+    </>
   )
 } 
