@@ -11,9 +11,15 @@ import { useRouter } from "next/navigation"
 const getNavigationItems = (userType: 'guest' | 'employer' | 'employee') => {
   switch (userType) {
     case 'employer':
-      return [] // Clean - no navigation items, only sign out
+      return [
+        { href: "/employer", label: "Dashboard", icon: Home },
+        { href: "/employer/post-job", label: "Post Job", icon: User },
+      ]
     case 'employee':
-      return [] // Clean - no navigation items, only sign out
+      return [
+        { href: "/employee", label: "Dashboard", icon: Home },
+        { href: "/employee/browse-jobs", label: "Browse Jobs", icon: User },
+      ]
     default: // guest
       return [
         { href: "/", label: "Home", icon: Home },
@@ -75,8 +81,8 @@ export default function Header({
           {/* Right side - Navigation */}
           {/* Desktop Navigation (static on wider screens) */}
           <nav className="hidden lg:flex items-center space-x-6">
-            {/* Navigation Items for Guests */}
-            {userType === 'guest' && navigationItems.map((item) => {
+            {/* Navigation Items for All User Types */}
+            {navigationItems.map((item) => {
               const IconComponent = item.icon
               return (
                 <Link

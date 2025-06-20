@@ -11,9 +11,15 @@ import { useRouter } from "next/navigation"
 const getNavigationItems = (userType: 'guest' | 'employer' | 'employee') => {
   switch (userType) {
     case 'employer':
-      return [] // Clean - no navigation items, only sign out
+      return [
+        { href: "/employer", label: "Dashboard", icon: Home },
+        { href: "/employer/post-job", label: "Post Job", icon: UserPlus },
+      ]
     case 'employee':
-      return [] // Clean - no navigation items, only sign out
+      return [
+        { href: "/employee", label: "Dashboard", icon: Home },
+        { href: "/employee/browse-jobs", label: "Browse Jobs", icon: LogIn },
+      ]
     default: // guest
       return [
         { href: "/", label: "Home", icon: Home },
@@ -144,20 +150,48 @@ export default function Sidebar({
   const renderAuthenticatedContent = () => (
     <nav className="p-6">
       <div className="space-y-2">
-        {/* Sign Out Button - Only button for authenticated users */}
+        {/* Navigation Items */}
+        {navigationItems.map((item, index) => {
+          const IconComponent = item.icon
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`
+                flex items-center space-x-4 text-gray-700 dark:text-gray-300 
+                ${theme.hoverColors} transition-all duration-200 ease-in-out
+                py-3 px-4 rounded-lg group transform
+                ${isMobileMenuOpen 
+                  ? 'translate-x-0 opacity-100' 
+                  : 'translate-x-4 opacity-0'
+                }
+              `}
+              style={{
+                transitionDelay: isMobileMenuOpen ? `${index * 100}ms` : '0ms',
+                transitionDuration: '300ms'
+              }}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <IconComponent className="h-5 w-5 group-hover:scale-110 transition-transform duration-200 flex-shrink-0" />
+              <span className="font-medium">{item.label}</span>
+            </Link>
+          )
+        })}
+        
+        {/* Sign Out Button */}
         <button
           onClick={handleSignOut}
           className={`
             w-full flex items-center space-x-4 text-red-600 dark:text-red-400 
             hover:bg-red-50/80 dark:hover:bg-red-950/80 transition-all duration-200 ease-in-out
-            py-3 px-4 rounded-lg group transform
+            py-3 px-4 rounded-lg group transform mt-4
             ${isMobileMenuOpen 
               ? 'translate-x-0 opacity-100' 
               : 'translate-x-4 opacity-0'
             }
           `}
           style={{
-            transitionDelay: isMobileMenuOpen ? '100ms' : '0ms',
+            transitionDelay: isMobileMenuOpen ? `${navigationItems.length * 100}ms` : '0ms',
             transitionDuration: '300ms'
           }}
         >
