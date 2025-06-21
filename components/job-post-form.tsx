@@ -10,6 +10,7 @@ import { Briefcase, FileText, MapPin } from "lucide-react"
 import PaymentInput from "@/components/ui/payment-input"
 import DateSelection from "@/components/ui/date-selection"
 import DurationInput from "@/components/ui/duration-input"
+import LocationInput from "@/components/ui/location-input"
 import { JobsService, type CreateJobData } from "@/lib/jobs-service"
 import type { Job } from "@/lib/database-types"
 
@@ -22,6 +23,8 @@ interface JobFormData {
   title: string
   description: string
   location: string
+  latitude?: number
+  longitude?: number
   pay: string
   duration: string
   available_dates: string
@@ -32,6 +35,8 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
     title: "",
     description: "",
     location: "",
+    latitude: undefined,
+    longitude: undefined,
     pay: "",
     duration: "",
     available_dates: ""
@@ -57,6 +62,8 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
         title: formData.title,
         description: formData.description,
         location: formData.location || undefined,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         pay: formData.pay,
         duration: formData.duration || undefined,
         available_dates: formData.available_dates || undefined
@@ -82,6 +89,8 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
           title: "",
           description: "",
           location: "",
+          latitude: undefined,
+          longitude: undefined,
           pay: "",
           duration: "",
           available_dates: ""
@@ -178,20 +187,19 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
           </div>
 
           {/* Location */}
-          <div className="space-y-2">
-            <Label htmlFor="location" className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Location
-            </Label>
-            <Input
-              id="location"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              placeholder="e.g., Downtown, Near School, Remote"
-              disabled={isSubmitting}
-            />
-          </div>
+          <LocationInput
+            value={formData.location}
+            onChange={(value, coordinates) => 
+              setFormData({ 
+                ...formData, 
+                location: value,
+                latitude: coordinates?.[1],
+                longitude: coordinates?.[0]
+              })
+            }
+            placeholder="e.g., Tel Aviv, Jerusalem, Haifa..."
+            disabled={isSubmitting}
+          />
 
           {/* Payment Input */}
           <PaymentInput

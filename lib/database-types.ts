@@ -14,6 +14,8 @@ export interface Job {
   title: string
   description: string
   location?: string
+  latitude?: number
+  longitude?: number
   pay: string
   duration?: string
   available_dates?: string
