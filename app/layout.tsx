@@ -2,6 +2,9 @@
 
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+// Import stagewise toolbar for development mode AI-powered editing
+import { StagewiseToolbar } from "@stagewise/toolbar-next";
+import { ReactPlugin } from "@stagewise-plugins/react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,9 +30,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900`}
       >
+        {/* Stagewise Toolbar - Only renders in development mode */}
+        <StagewiseToolbar 
+          config={{
+            plugins: [ReactPlugin]
+          }}
+        />
+        
         {/* Main Content */}
         <main>
-          {children}
+        {children}
         </main>
       </body>
     </html>

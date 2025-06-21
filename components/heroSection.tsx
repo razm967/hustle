@@ -1,11 +1,14 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Menu, X, Home, User, Info, LogOut } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { getCurrentUserProfile, getUserInitials } from "@/lib/user-utils"
+import type { UserProfile } from "@/lib/database-types"
 
 // Navigation items for different user types
 const getNavigationItems = (userType: 'guest' | 'employer' | 'employee') => {
@@ -47,6 +50,45 @@ export default function Header({
 }: HeaderProps) {
   const navigationItems = getNavigationItems(userType)
   const router = useRouter()
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [userInitials, setUserInitials] = useState<string>('')
+
+  useEffect(() => {
+    let isMounted = true
+    
+    if (userType !== 'guest') {
+      loadUserProfile()
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [userType])
+
+  const loadUserProfile = async () => {
+    try {
+      const { user, profile } = await getCurrentUserProfile()
+      console.log('Header - User profile data:', { 
+        userId: user?.id, 
+        email: user?.email, 
+        profileName: profile?.full_name, 
+        role: profile?.role 
+      })
+      if (profile) {
+        setUserProfile(profile)
+        const initials = getUserInitials(profile.full_name, user?.email)
+        console.log('Header - Generated initials:', initials, 'from name:', profile.full_name)
+        setUserInitials(initials)
+      } else if (user) {
+        // Fallback to email if no profile
+        const initials = getUserInitials(undefined, user.email)
+        console.log('Header - Fallback initials from email:', initials, 'from email:', user.email)
+        setUserInitials(initials)
+      }
+    } catch (error) {
+      console.error('Header - Error loading user profile:', error)
+    }
+  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -64,7 +106,7 @@ export default function Header({
               <Avatar className="h-10 w-10">
                 <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
                 <AvatarFallback className="bg-blue-600 text-white">
-                  {userType === 'employer' ? 'EM' : userType === 'employee' ? 'EE' : 'HU'}
+                  {userInitials || (userType === 'employer' ? 'EM' : userType === 'employee' ? 'EE' : 'HU')}
                 </AvatarFallback>
               </Avatar>
             </Button>

@@ -9,6 +9,7 @@ export interface CreateJobData {
   location?: string
   pay: string
   duration?: string
+  available_dates?: string
 }
 
 export class JobsService {

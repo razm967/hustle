@@ -52,13 +52,14 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
     }
 
     try {
-      // Prepare job data for database (exclude available_dates if not needed in DB yet)
+      // Prepare job data for database
       const jobData: CreateJobData = {
         title: formData.title,
         description: formData.description,
         location: formData.location || undefined,
         pay: formData.pay,
-        duration: formData.duration || undefined
+        duration: formData.duration || undefined,
+        available_dates: formData.available_dates || undefined
       }
 
       // Save job to database

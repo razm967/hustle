@@ -30,24 +30,24 @@ export default function EmployerLayout({
   return (
     <>
       {/* HeroSection Component - Clean with only sign out */}
-      <HeroSection 
-        isMobileMenuOpen={isMobileMenuOpen} 
-        toggleMobileMenu={toggleMobileMenu}
-        userType="employer"
-        title="Employer Dashboard"
-        subtitle="Manage your jobs & find talent"
-      />
+        <HeroSection 
+          isMobileMenuOpen={isMobileMenuOpen} 
+          toggleMobileMenu={toggleMobileMenu}
+          userType="employer"
+          title="Employer Dashboard"
+          subtitle="Manage your jobs & find talent"
+        />
 
       {/* Employer Sidebar Component - Clean with only sign out */}
-      <Sidebar 
-        isMobileMenuOpen={isMobileMenuOpen} 
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-        userType="employer"
-      />
+        <Sidebar 
+          isMobileMenuOpen={isMobileMenuOpen} 
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          userType="employer"
+        />
 
-      {/* Main Content */}
+        {/* Main Content */}
       <div className="employer-content">
-        {children}
+          {children}
       </div>
     </>
   )

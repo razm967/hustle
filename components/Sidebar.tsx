@@ -1,11 +1,14 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { X, LogIn, UserPlus, LogOut, Info, Home, User } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { getCurrentUserProfile, getUserInitials } from "@/lib/user-utils"
+import type { UserProfile } from "@/lib/database-types"
 
 // Navigation items for different user types
 const getNavigationItems = (userType: 'guest' | 'employer' | 'employee') => {
@@ -92,6 +95,45 @@ export default function Sidebar({
   const navigationItems = getNavigationItems(userType)
   const theme = getThemeConfig(userType)
   const router = useRouter()
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [userInitials, setUserInitials] = useState<string>('')
+
+  useEffect(() => {
+    let isMounted = true
+    
+    if (userType !== 'guest') {
+      loadUserProfile()
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [userType])
+
+  const loadUserProfile = async () => {
+    try {
+      const { user, profile } = await getCurrentUserProfile()
+      console.log('Sidebar - User profile data:', { 
+        userId: user?.id, 
+        email: user?.email, 
+        profileName: profile?.full_name, 
+        role: profile?.role 
+      })
+      if (profile) {
+        setUserProfile(profile)
+        const initials = getUserInitials(profile.full_name, user?.email)
+        console.log('Sidebar - Generated initials:', initials, 'from name:', profile.full_name)
+        setUserInitials(initials)
+      } else if (user) {
+        // Fallback to email if no profile
+        const initials = getUserInitials(undefined, user.email)
+        console.log('Sidebar - Fallback initials from email:', initials, 'from email:', user.email)
+        setUserInitials(initials)
+      }
+    } catch (error) {
+      console.error('Sidebar - Error loading user profile:', error)
+    }
+  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -139,7 +181,7 @@ export default function Sidebar({
               >
                 <IconComponent className="h-5 w-5 group-hover:scale-110 transition-transform duration-200 flex-shrink-0" />
                 <span className="font-medium">{item.label}</span>
-              </Link>
+          </Link>
             )
           })}
         </div>
@@ -224,7 +266,7 @@ export default function Sidebar({
             <Avatar className="h-8 w-8">
               <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
               <AvatarFallback className={`${theme.avatarBg} text-white text-sm`}>
-                {userType === 'guest' ? <User className="h-4 w-4" /> : theme.avatarFallback}
+                {userType === 'guest' ? <User className="h-4 w-4" /> : (userInitials || theme.avatarFallback)}
               </AvatarFallback>
             </Avatar>
             <div className="ml-3">

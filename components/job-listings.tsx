@@ -39,7 +39,7 @@ export default function JobListings({ jobs }: JobListingsProps) {
       
       <div className="grid gap-4">
         {jobs.map((job) => (
-          <Card key={job.id} className="hover:shadow-lg transition-shadow cursor-pointer group">
+          <Card key={job.id} className="relative hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => handleViewJob(job.id)}>
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
@@ -81,25 +81,27 @@ export default function JobListings({ jobs }: JobListingsProps) {
                   </div>
                 )}
 
-                {/* Available Dates - Note: This would need to be added to the database schema */}
-                {(job as any).available_dates && (
+                {/* Available Dates */}
+                {job.available_dates && (
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                    <span>{(job as any).available_dates}</span>
+                    <span>{job.available_dates}</span>
                   </div>
                 )}
               </div>
               
-              {/* View Details Button */}
-              <div className="flex justify-end">
+              {/* View Details Arrow */}
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
                 <Button 
-                  onClick={() => handleViewJob(job.id)}
-                  variant="outline"
-                  size="sm"
-                  className="group-hover:bg-green-50 dark:group-hover:bg-green-950 group-hover:border-green-300 dark:group-hover:border-green-700"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleViewJob(job.id)
+                  }}
+                  variant="ghost"
+                  size="icon"
+                  className="h-12 w-12 rounded-full group-hover:bg-green-100 dark:group-hover:bg-green-900 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors"
                 >
-                  View Details
-                  <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="group-hover:translate-x-1 transition-transform" style={{ width: '24px', height: '24px' }} />
                 </Button>
               </div>
             </CardContent>

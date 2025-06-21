@@ -1,14 +1,33 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import JobListings from "@/components/job-listings"
+import JobFilters from "@/components/job-filters"
+import type { JobFilters as JobFiltersType } from "@/components/job-filters"
 import { JobsService } from "@/lib/jobs-service"
+import { filterJobs, getFilterSummary } from "@/lib/job-filter-utils"
 import type { Job } from "@/lib/database-types"
 
 export default function BrowseJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [filters, setFilters] = useState<JobFiltersType>({})
+
+  // Filter jobs based on current filters
+  const filteredJobs = useMemo(() => {
+    return filterJobs(jobs, filters)
+  }, [jobs, filters])
+
+  // Handle filter changes
+  const handleFiltersChange = (newFilters: JobFiltersType) => {
+    setFilters(newFilters)
+  }
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setFilters({})
+  }
 
   useEffect(() => {
     fetchJobs()
@@ -72,7 +91,32 @@ export default function BrowseJobsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
-        <JobListings jobs={jobs} />
+        {/* Page Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Browse Jobs
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Find the perfect job opportunity for you
+          </p>
+        </div>
+
+        {/* Filters */}
+        <JobFilters 
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onClearFilters={handleClearFilters}
+        />
+
+        {/* Filter Summary */}
+        {Object.keys(filters).some(key => filters[key as keyof JobFiltersType] !== undefined) && (
+          <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+            {getFilterSummary(filters)} • Showing {filteredJobs.length} of {jobs.length} jobs
+          </div>
+        )}
+
+        {/* Job Listings */}
+        <JobListings jobs={filteredJobs} />
       </div>
     </div>
   )

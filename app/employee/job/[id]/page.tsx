@@ -157,10 +157,10 @@ export default function JobDetailsPage() {
               )}
 
               {/* Available Dates */}
-              {(job as any).available_dates && (
+              {job.available_dates && (
                 <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                  <span className="text-base">{(job as any).available_dates}</span>
+                  <span className="text-base">{job.available_dates}</span>
                 </div>
               )}
             </div>
@@ -176,7 +176,7 @@ export default function JobDetailsPage() {
                 </p>
                 
                 {/* Available Dates in Description */}
-                {(job as any).available_dates && (
+                {job.available_dates && (
                   <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
                     <div className="flex items-start gap-2">
                       <Calendar className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
@@ -185,9 +185,9 @@ export default function JobDetailsPage() {
                           Available Dates:
                         </p>
                         <p className="text-gray-700 dark:text-gray-300">
-                          {(job as any).available_dates.includes(' to ') || (job as any).available_dates.includes(' - ') 
-                            ? `This job can be scheduled on any date between ${(job as any).available_dates}. Contact the employer to arrange the specific timing that works best for both of you.`
-                            : `This job is scheduled for ${(job as any).available_dates}. Please confirm your availability for this specific date when applying.`
+                          {job.available_dates.includes(' to ') || job.available_dates.includes(' - ') 
+                            ? `This job can be scheduled on any date between ${job.available_dates}. Contact the employer to arrange the specific timing that works best for both of you.`
+                            : `This job is scheduled for ${job.available_dates}. Please confirm your availability for this specific date when applying.`
                           }
                         </p>
                       </div>
