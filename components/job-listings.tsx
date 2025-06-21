@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, MapPin, Clock, Calendar, ArrowRight } from "lucide-react"
+import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { Job } from "@/lib/database-types"
 
@@ -89,6 +89,22 @@ export default function JobListings({ jobs }: JobListingsProps) {
                   </div>
                 )}
               </div>
+
+              {/* Job Tags */}
+              {job.tags && job.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {job.tags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="outline"
+                      className="text-xs px-2 py-1 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                    >
+                      <Tag className="h-3 w-3 mr-1" />
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
               
               {/* View Details Arrow */}
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2">

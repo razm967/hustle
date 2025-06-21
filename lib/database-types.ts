@@ -19,6 +19,7 @@ export interface Job {
   pay: string
   duration?: string
   available_dates?: string
+  tags?: string[]
   status: 'open' | 'closed' | 'in_progress' | 'completed'
   employer_id: string
   created_at: string

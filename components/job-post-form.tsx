@@ -11,6 +11,7 @@ import PaymentInput from "@/components/ui/payment-input"
 import DateSelection from "@/components/ui/date-selection"
 import DurationInput from "@/components/ui/duration-input"
 import LocationInput from "@/components/ui/location-input"
+import TagSelector from "@/components/ui/tag-selector"
 import { JobsService, type CreateJobData } from "@/lib/jobs-service"
 import type { Job } from "@/lib/database-types"
 
@@ -28,6 +29,7 @@ interface JobFormData {
   pay: string
   duration: string
   available_dates: string
+  tags: string[]
 }
 
 export default function JobPostForm({ onJobPost }: JobPostFormProps) {
@@ -39,7 +41,8 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
     longitude: undefined,
     pay: "",
     duration: "",
-    available_dates: ""
+    available_dates: "",
+    tags: []
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -66,7 +69,8 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
         longitude: formData.longitude,
         pay: formData.pay,
         duration: formData.duration || undefined,
-        available_dates: formData.available_dates || undefined
+        available_dates: formData.available_dates || undefined,
+        tags: formData.tags.length > 0 ? formData.tags : undefined
       }
 
       // Save job to database
@@ -93,7 +97,8 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
           longitude: undefined,
           pay: "",
           duration: "",
-          available_dates: ""
+          available_dates: "",
+          tags: []
         })
 
         alert("Job posted successfully!")
@@ -131,6 +136,13 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
     setFormData({
       ...formData,
       available_dates: value
+    })
+  }
+
+  const handleTagsChange = (tags: string[]) => {
+    setFormData({
+      ...formData,
+      tags
     })
   }
 
@@ -220,6 +232,13 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
           <DateSelection
             value={formData.available_dates || ""}
             onChange={handleDateChange}
+            disabled={isSubmitting}
+          />
+
+          {/* Job Tags */}
+          <TagSelector
+            selectedTags={formData.tags}
+            onChange={handleTagsChange}
             disabled={isSubmitting}
           />
 

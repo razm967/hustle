@@ -9,10 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
-import { Calendar as CalendarIcon, DollarSign, Clock, Filter, X } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Calendar as CalendarIcon, DollarSign, Clock, Filter, X, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import type { DateRange } from "react-day-picker"
+import SmartLocationFilter from "./smart-location-filter"
+import TagFilter from "./ui/tag-filter"
+import type { Job } from "@/lib/database-types"
 
 export interface JobFilters {
   dateRange?: DateRange
@@ -20,19 +24,24 @@ export interface JobFilters {
   maxPay?: number
   duration?: string
   location?: string
+  userLocation?: { name: string; coordinates: [number, number] }
+  maxDistance?: number
+  tags?: string[]
 }
 
 interface JobFiltersProps {
   filters: JobFilters
   onFiltersChange: (filters: JobFilters) => void
   onClearFilters: () => void
+  jobs?: Job[]
 }
 
-export default function JobFilters({ filters, onFiltersChange, onClearFilters }: JobFiltersProps) {
+export default function JobFilters({ filters, onFiltersChange, onClearFilters, jobs = [] }: JobFiltersProps) {
   const [isDateOpen, setIsDateOpen] = useState(false)
   const [localMinPay, setLocalMinPay] = useState(filters.minPay?.toString() || "")
   const [localMaxPay, setLocalMaxPay] = useState(filters.maxPay?.toString() || "")
   const [localLocation, setLocalLocation] = useState(filters.location || "")
+  const [paymentError, setPaymentError] = useState<string | null>(null)
 
   // Duration options
   const durationOptions = [
@@ -56,8 +65,17 @@ export default function JobFilters({ filters, onFiltersChange, onClearFilters }:
   }
 
   const handlePayChange = () => {
+    // Clear any previous error
+    setPaymentError(null)
+    
     const minPay = localMinPay ? parseFloat(localMinPay) : undefined
     const maxPay = localMaxPay ? parseFloat(localMaxPay) : undefined
+    
+    // Validate that max is not smaller than min
+    if (minPay !== undefined && maxPay !== undefined && maxPay < minPay) {
+      setPaymentError("Maximum payment cannot be smaller than minimum payment")
+      return
+    }
     
     onFiltersChange({
       ...filters,
@@ -80,11 +98,26 @@ export default function JobFilters({ filters, onFiltersChange, onClearFilters }:
     })
   }
 
+  const handleUserLocationChange = (userLocation?: { name: string; coordinates: [number, number] }) => {
+    onFiltersChange({
+      ...filters,
+      userLocation
+    })
+  }
+
+  const handleDistanceChange = (distance?: number) => {
+    onFiltersChange({
+      ...filters,
+      maxDistance: distance
+    })
+  }
+
   const handleClearAll = () => {
     // Reset local states
     setLocalMinPay("")
     setLocalMaxPay("")
     setLocalLocation("")
+    setPaymentError(null)
     // Clear filters
     onClearFilters()
   }
@@ -95,6 +128,8 @@ export default function JobFilters({ filters, onFiltersChange, onClearFilters }:
     if (filters.minPay || filters.maxPay) count++
     if (filters.duration) count++
     if (filters.location) count++
+    if (filters.userLocation && filters.maxDistance) count++
+    if (filters.tags && filters.tags.length > 0) count++
     return count
   }
 
@@ -188,7 +223,7 @@ export default function JobFilters({ filters, onFiltersChange, onClearFilters }:
                 onKeyDown={(e) => e.key === 'Enter' && handlePayChange()}
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 className="w-full"
               />
               <Input
@@ -199,10 +234,16 @@ export default function JobFilters({ filters, onFiltersChange, onClearFilters }:
                 onKeyDown={(e) => e.key === 'Enter' && handlePayChange()}
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 className="w-full"
               />
             </div>
+            {paymentError && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{paymentError}</AlertDescription>
+              </Alert>
+            )}
           </div>
 
           {/* Duration Filter */}
@@ -225,15 +266,24 @@ export default function JobFilters({ filters, onFiltersChange, onClearFilters }:
             </Select>
           </div>
 
-          {/* Location Filter */}
-          <div className="space-y-2">
-            <Label>Location</Label>
-            <Input
-              placeholder="Enter location..."
-              value={localLocation}
-              onChange={(e) => setLocalLocation(e.target.value)}
-              onBlur={handleLocationChange}
-              onKeyDown={(e) => e.key === 'Enter' && handleLocationChange()}
+          {/* Smart Location Filter */}
+          <div className="col-span-1 md:col-span-2 lg:col-span-4">
+            <SmartLocationFilter
+              value={filters.location}
+              userLocation={filters.userLocation}
+              maxDistance={filters.maxDistance}
+              jobs={jobs}
+              onChange={(location) => onFiltersChange({ ...filters, location })}
+              onUserLocationChange={handleUserLocationChange}
+              onDistanceChange={handleDistanceChange}
+            />
+          </div>
+
+          {/* Tag Filter */}
+          <div className="col-span-1 md:col-span-2 lg:col-span-4">
+            <TagFilter
+              selectedTags={filters.tags || []}
+              onChange={(tags) => onFiltersChange({ ...filters, tags: tags.length > 0 ? tags : undefined })}
             />
           </div>
         </div>
@@ -299,6 +349,36 @@ export default function JobFilters({ filters, onFiltersChange, onClearFilters }:
                       e.stopPropagation()
                       setLocalLocation("")
                       onFiltersChange({ ...filters, location: undefined })
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+                             {filters.userLocation && filters.maxDistance && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Within {filters.maxDistance}km of {filters.userLocation.name}
+                  <button
+                    type="button"
+                    className="ml-1 hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onFiltersChange({ ...filters, userLocation: undefined, maxDistance: undefined })
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+                             {filters.tags && filters.tags.length > 0 && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Tags: {filters.tags.join(', ')}
+                  <button
+                    type="button"
+                    className="ml-1 hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onFiltersChange({ ...filters, tags: undefined })
                     }}
                   >
                     <X className="h-3 w-3" />

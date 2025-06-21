@@ -106,6 +106,7 @@ export default function BrowseJobsPage() {
           filters={filters}
           onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
+          jobs={jobs}
         />
 
         {/* Filter Summary */}

@@ -47,11 +47,41 @@ export function filterJobs(jobs: Job[], filters: JobFilters): Job[] {
     if (filters.location) {
       if (!job.location) return false
       
-      // Case-insensitive partial match
+      // Smart location matching - split search terms and check if all are found
       const jobLocation = job.location.toLowerCase()
       const filterLocation = filters.location.toLowerCase()
       
-      if (!jobLocation.includes(filterLocation)) return false
+      // Split filter into words and remove empty strings
+      const searchTerms = filterLocation.split(/[\s,]+/).filter(term => term.length > 0)
+      
+      // Check if all search terms are found in the job location
+      const allTermsFound = searchTerms.every(term => jobLocation.includes(term))
+      
+      if (!allTermsFound) return false
+    }
+    
+    // Distance filter - check if job is within user's specified radius
+    if (filters.userLocation && filters.maxDistance !== undefined) {
+      if (!job.latitude || !job.longitude) return false
+      
+      const distance = calculateDistance(
+        filters.userLocation.coordinates,
+        [job.longitude, job.latitude]
+      )
+      
+      if (distance > filters.maxDistance) return false
+    }
+    
+    // Tag filter - check if job has any of the selected tags
+    if (filters.tags && filters.tags.length > 0) {
+      if (!job.tags || job.tags.length === 0) return false
+      
+      // Check if job has at least one of the selected tags
+      const hasMatchingTag = filters.tags.some(filterTag => 
+        job.tags!.includes(filterTag)
+      )
+      
+      if (!hasMatchingTag) return false
     }
     
     return true
@@ -124,6 +154,21 @@ function parsePayment(paymentStr: string): number | null {
 }
 
 /**
+ * Calculate distance between two coordinates in km
+ */
+function calculateDistance(coord1: [number, number], coord2: [number, number]): number {
+  const R = 6371 // Earth's radius in km
+  const dLat = (coord2[1] - coord1[1]) * Math.PI / 180
+  const dLon = (coord2[0] - coord1[0]) * Math.PI / 180
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(coord1[1] * Math.PI / 180) * Math.cos(coord2[1] * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+  return R * c
+}
+
+/**
  * Normalizes duration strings for comparison
  */
 function normalizeDuration(duration: string): string {
@@ -181,6 +226,18 @@ export function getFilterSummary(filters: JobFilters): string {
   
   if (filters.location) {
     parts.push(`location: ${filters.location}`)
+  }
+  
+  if (filters.userLocation && filters.maxDistance !== undefined) {
+    parts.push(`within ${filters.maxDistance}km of ${filters.userLocation.name}`)
+  }
+  
+  if (filters.tags && filters.tags.length > 0) {
+    if (filters.tags.length === 1) {
+      parts.push(`tag: ${filters.tags[0]}`)
+    } else {
+      parts.push(`tags: ${filters.tags.join(', ')}`)
+    }
   }
   
   return parts.length > 0 ? `Filtered by ${parts.join(', ')}` : ''

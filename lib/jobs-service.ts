@@ -12,6 +12,7 @@ export interface CreateJobData {
   pay: string
   duration?: string
   available_dates?: string
+  tags?: string[]
 }
 
 export class JobsService {
