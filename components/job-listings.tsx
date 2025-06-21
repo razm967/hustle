@@ -1,21 +1,48 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag } from "lucide-react"
+import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, BookmarkCheck } from "lucide-react"
 import { useRouter } from "next/navigation"
-import type { Job } from "@/lib/database-types"
+import { JobsService } from "@/lib/jobs-service"
+import type { JobWithStatus } from "@/lib/database-types"
 
 interface JobListingsProps {
-  jobs: Job[]
+  jobs: JobWithStatus[]
+  onJobSaved?: () => void // Callback to refresh data when a job is saved/unsaved
 }
 
-export default function JobListings({ jobs }: JobListingsProps) {
+export default function JobListings({ jobs, onJobSaved }: JobListingsProps) {
   const router = useRouter()
+  const [savingJobId, setSavingJobId] = useState<string | null>(null)
 
   const handleViewJob = (jobId: string) => {
     router.push(`/employee/job/${jobId}`)
+  }
+
+  const handleSaveJob = async (e: React.MouseEvent, jobId: string, isSaved: boolean) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setSavingJobId(jobId)
+
+    try {
+      if (isSaved) {
+        await JobsService.unsaveJob(jobId)
+      } else {
+        await JobsService.saveJob(jobId)
+      }
+      
+      // Call the callback to refresh data
+      if (onJobSaved) {
+        onJobSaved()
+      }
+    } catch (error) {
+      console.error('Error saving/unsaving job:', error)
+    } finally {
+      setSavingJobId(null)
+    }
   }
 
   if (jobs.length === 0) {
@@ -43,16 +70,39 @@ export default function JobListings({ jobs }: JobListingsProps) {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg text-green-600 dark:text-green-400">
+                  <CardTitle className="text-lg text-green-600 dark:text-green-400 flex items-center gap-2">
                     {job.title}
+                    {/* Application Status Badge */}
+                    {job.application_status === 'applied' && (
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                        Applied
+                      </Badge>
+                    )}
                   </CardTitle>
                   <CardDescription className="mt-1">
                     Posted {new Date(job.created_at).toLocaleDateString()}
                   </CardDescription>
                 </div>
-                <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                  {job.status}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    {job.status}
+                  </Badge>
+                  {/* Save/Unsave Button */}
+                  <Button
+                    type="button"
+                    onClick={(e) => handleSaveJob(e, job.id, job.is_saved || false)}
+                    variant="ghost"
+                    size="icon"
+                    disabled={savingJobId === job.id}
+                    className="h-8 w-8 hover:bg-yellow-100 dark:hover:bg-yellow-900 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
+                  >
+                    {job.is_saved ? (
+                      <BookmarkCheck className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                    ) : (
+                      <Bookmark className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

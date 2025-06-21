@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { X, LogIn, UserPlus, LogOut, Info, Home, User } from "lucide-react"
+import { X, LogIn, UserPlus, LogOut, Info, Home, User, Compass, Bookmark, Plus } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
@@ -16,12 +16,13 @@ const getNavigationItems = (userType: 'guest' | 'employer' | 'employee') => {
     case 'employer':
       return [
         { href: "/employer", label: "Dashboard", icon: Home },
-        { href: "/employer/post-job", label: "Post Job", icon: UserPlus },
+        { href: "/employer/post-job", label: "Post Job", icon: Plus },
       ]
     case 'employee':
       return [
         { href: "/employee", label: "Dashboard", icon: Home },
-        { href: "/employee/browse-jobs", label: "Browse Jobs", icon: LogIn },
+        { href: "/employee/browse-jobs", label: "Browse Jobs", icon: Compass },
+        { href: "/employee/saved", label: "My Jobs", icon: Bookmark },
       ]
     default: // guest
       return [
@@ -136,8 +137,9 @@ export default function Sidebar({
   }
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
     setIsMobileMenuOpen(false)
+    // Use local sign out to only affect this tab
+    await supabase.auth.signOut({ scope: 'local' })
     router.push('/')
   }
 

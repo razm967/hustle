@@ -34,4 +34,18 @@ export interface JobApplication {
   message?: string
   created_at: string
   updated_at: string
+}
+
+// New interface for saved jobs
+export interface SavedJob {
+  id: string
+  job_id: string
+  employee_id: string
+  created_at: string
+}
+
+// Extended job interface with application status for employee views
+export interface JobWithStatus extends Job {
+  application_status?: 'applied' | 'saved' | null
+  is_saved?: boolean
 } 

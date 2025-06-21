@@ -6,10 +6,10 @@ import JobFilters from "@/components/job-filters"
 import type { JobFilters as JobFiltersType } from "@/components/job-filters"
 import { JobsService } from "@/lib/jobs-service"
 import { filterJobs, getFilterSummary } from "@/lib/job-filter-utils"
-import type { Job } from "@/lib/database-types"
+import type { JobWithStatus } from "@/lib/database-types"
 
 export default function BrowseJobsPage() {
-  const [jobs, setJobs] = useState<Job[]>([])
+  const [jobs, setJobs] = useState<JobWithStatus[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filters, setFilters] = useState<JobFiltersType>({})
@@ -52,6 +52,11 @@ export default function BrowseJobsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Callback for when a job is saved/unsaved to refresh the data
+  const handleJobSaved = () => {
+    fetchJobs()
   }
 
   if (loading) {
@@ -117,7 +122,7 @@ export default function BrowseJobsPage() {
         )}
 
         {/* Job Listings */}
-        <JobListings jobs={filteredJobs} />
+        <JobListings jobs={filteredJobs} onJobSaved={handleJobSaved} />
       </div>
     </div>
   )

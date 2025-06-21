@@ -7,20 +7,21 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, DollarSign, MapPin, Clock, Calendar, MessageSquare, Briefcase } from "lucide-react"
+import { ArrowLeft, DollarSign, MapPin, Clock, Calendar, MessageSquare, Briefcase, Bookmark, BookmarkCheck } from "lucide-react"
 import { JobsService } from "@/lib/jobs-service"
-import type { Job } from "@/lib/database-types"
+import type { JobWithStatus } from "@/lib/database-types"
 
 export default function JobDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const jobId = params.id as string
 
-  const [job, setJob] = useState<Job | null>(null)
+  const [job, setJob] = useState<JobWithStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [applying, setApplying] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchJobDetails()
@@ -74,6 +75,32 @@ export default function JobDetailsPage() {
     }
   }
 
+  const handleSaveJob = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
+    if (!job) return
+
+    setSaving(true)
+    try {
+      if (job.is_saved) {
+        await JobsService.unsaveJob(job.id)
+      } else {
+        await JobsService.saveJob(job.id)
+      }
+      
+      // Refresh job details to get updated save status
+      await fetchJobDetails()
+    } catch (error) {
+      console.error('Error saving/unsaving job:', error)
+      alert("An error occurred while saving the job. Please try again.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -121,17 +148,41 @@ export default function JobDetailsPage() {
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-2xl text-green-600 dark:text-green-400 mb-2">
-                  <Briefcase className="h-6 w-6 inline mr-2" />
+                <CardTitle className="text-2xl text-green-600 dark:text-green-400 mb-2 flex items-center gap-2">
+                  <Briefcase className="h-6 w-6" />
                   {job.title}
+                  {/* Application Status Badge */}
+                  {job.application_status === 'applied' && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-sm">
+                      Applied
+                    </Badge>
+                  )}
                 </CardTitle>
                 <CardDescription className="text-base">
                   Posted {new Date(job.created_at).toLocaleDateString()}
                 </CardDescription>
               </div>
-              <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                {job.status}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                  {job.status}
+                </Badge>
+                {/* Save/Unsave Button */}
+                <Button
+                  type="button"
+                  onClick={(e) => handleSaveJob(e)}
+                  variant="outline"
+                  size="icon"
+                  disabled={saving}
+                  className="hover:bg-yellow-100 dark:hover:bg-yellow-900 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
+                  title={job.is_saved ? "Remove from saved" : "Save job"}
+                >
+                  {job.is_saved ? (
+                    <BookmarkCheck className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                  ) : (
+                    <Bookmark className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -199,42 +250,60 @@ export default function JobDetailsPage() {
           </CardContent>
         </Card>
 
-        {/* Application Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Apply for this Job
-            </CardTitle>
-            <CardDescription>
-              Add a personal message to your application (optional)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="message">Your Message</Label>
-                <Textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Tell the employer why you're interested in this job, your relevant experience, or any questions you have..."
-                  rows={4}
-                  disabled={applying}
-                />
-              </div>
+        {/* Application Form - Only show if not already applied */}
+        {job.application_status !== 'applied' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Apply for this Job
+              </CardTitle>
+              <CardDescription>
+                Add a personal message to your application (optional)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="message">Your Message</Label>
+                  <Textarea
+                    id="message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Tell the employer why you're interested in this job, your relevant experience, or any questions you have..."
+                    rows={4}
+                    disabled={applying}
+                  />
+                </div>
 
-              <Button 
-                onClick={handleApply}
-                className="w-full bg-green-600 hover:bg-green-700"
-                disabled={applying}
-                size="lg"
-              >
-                {applying ? "Submitting Application..." : "Submit Application"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <Button 
+                  onClick={handleApply}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  disabled={applying}
+                  size="lg"
+                >
+                  {applying ? "Submitting Application..." : "Submit Application"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Already Applied Message */}
+        {job.application_status === 'applied' && (
+          <Card className="border-blue-200 dark:border-blue-800">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <div className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-4 py-3 rounded-lg">
+                  <p className="font-medium">You have already applied for this job!</p>
+                  <p className="text-sm mt-1">
+                    Check your <Button variant="link" className="p-0 h-auto text-blue-600 dark:text-blue-400" onClick={() => router.push("/employee/saved")}>My Jobs</Button> page to track your application status.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

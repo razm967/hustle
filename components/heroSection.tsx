@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Menu, X, Home, User, Info, LogOut } from "lucide-react"
+import { Menu, X, Home, User, Info, LogOut, Compass, Bookmark, Plus } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
@@ -16,12 +16,13 @@ const getNavigationItems = (userType: 'guest' | 'employer' | 'employee') => {
     case 'employer':
       return [
         { href: "/employer", label: "Dashboard", icon: Home },
-        { href: "/employer/post-job", label: "Post Job", icon: User },
+        { href: "/employer/post-job", label: "Post Job", icon: Plus },
       ]
     case 'employee':
       return [
         { href: "/employee", label: "Dashboard", icon: Home },
-        { href: "/employee/browse-jobs", label: "Browse Jobs", icon: User },
+        { href: "/employee/browse-jobs", label: "Browse Jobs", icon: Compass },
+        { href: "/employee/saved", label: "My Jobs", icon: Bookmark },
       ]
     default: // guest
       return [
@@ -91,12 +92,13 @@ export default function Header({
   }
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    // Use local sign out to only affect this tab
+    await supabase.auth.signOut({ scope: 'local' })
     router.push('/')
   }
   
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 relative">
+    <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 relative sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           

@@ -1,11 +1,11 @@
-import type { Job } from "./database-types"
+import type { Job, JobWithStatus } from "./database-types"
 import type { JobFilters } from "@/components/job-filters"
 import { isWithinInterval, parseISO } from "date-fns"
 
 /**
  * Filters jobs based on the provided filter criteria
  */
-export function filterJobs(jobs: Job[], filters: JobFilters): Job[] {
+export function filterJobs(jobs: (Job | JobWithStatus)[], filters: JobFilters): (Job | JobWithStatus)[] {
   return jobs.filter(job => {
     // Date filter - check if job's available dates overlap with filter date range
     if (filters.dateRange?.from) {
