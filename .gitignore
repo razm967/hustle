@@ -1,6 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# ===== DEPENDENCIES =====
 /node_modules
 /.pnp
 .pnp.*
@@ -9,33 +9,263 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+package-lock.json.bak
+yarn.lock.bak
 
-# env files (can opt-in for committing if needed)
+# ===== NEXT.JS =====
+/.next/
+/out/
+/dist/
+/build/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+
+# ===== TESTING =====
+/coverage
+/.nyc_output
+/test-results/
+/playwright-report/
+/test-results/
+*.lcov
+coverage.xml
+junit.xml
+
+# ===== ENVIRONMENT VARIABLES =====
 .env
 .env.local
-# vercel
-.vercel
+.env.development
+.env.test
+.env.production
+.env.staging
+.env.*.local
+.env.example
 
-# typescript
+# ===== SUPABASE =====
+.supabase/
+supabase/config.toml
+supabase/.temp/
+supabase/seed.sql
+*.dump
+*.backup
+
+# ===== DATABASE =====
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ===== LOGS =====
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+debug.log
+error.log
+combined.log
+
+# ===== RUNTIME DATA =====
+pids/
+*.pid
+*.seed
+*.pid.lock
+.grunt/
+lib-cov/
+coverage/
+.nyc_output/
+.cache/
+.parcel-cache/
+
+# ===== OS GENERATED FILES =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# ===== IDE & EDITOR FILES =====
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===== TEMPORARY FILES =====
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+.tmp/
+temp/
+tmp/
+
+# ===== SECURITY & SENSITIVE FILES =====
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+*.jks
+config/keys.js
+config/prod.js
+secrets.json
+private/
+.secrets/
+.private/
+
+# ===== DEPLOYMENT =====
+.vercel/
+.netlify/
+.firebase/
+.aws/
+.gcp/
+.azure/
+dist/
+build/
+public/sitemap*.xml
+public/robots.txt
+
+# ===== MONITORING & ANALYTICS =====
+.sentry/
+.datadog/
+newrelic.js
+newrelic_agent.log
+
+# ===== PACKAGE MANAGERS =====
+.npm/
+.yarn-integrity
+.pnp.*
+.zero-installs
+
+# ===== TYPESCRIPT =====
 *.tsbuildinfo
-next-env.d.ts
+.tscache/
+
+# ===== ESLINT =====
+.eslintcache
+
+# ===== PRETTIER =====
+.prettiercache
+
+# ===== STYLELINT =====
+.stylelintcache
+
+# ===== JEST =====
+.jest/
+
+# ===== STORYBOOK =====
+storybook-static/
+.storybook/public/
+
+# ===== DOCUMENTATION =====
+docs/build/
+.docusaurus/
+
+# ===== MISC =====
+*.tgz
+*.tar.gz
+*.zip
+*.rar
+*.7z
+.cache/
+.parcel-cache/
+.turbo/
+.swc/
+.contentlayer/
+
+# ===== LOCAL DEVELOPMENT =====
+.local/
+local/
+dev/
+development/
+staging/
+.staging/
+
+# ===== BACKUP FILES =====
+*.bak
+*.backup
+*.old
+*.orig
+*~
+
+# ===== WINDOWS =====
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ===== LINUX =====
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===== MACOS =====
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
