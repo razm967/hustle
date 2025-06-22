@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { X, LogIn, UserPlus, LogOut, Info, Home, User, Compass, Bookmark, Plus } from "lucide-react"
+import { X, LogIn, UserPlus, LogOut, Info, Home, User, Compass, Bookmark, Plus, FileText } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
@@ -17,12 +17,15 @@ const getNavigationItems = (userType: 'guest' | 'employer' | 'employee') => {
       return [
         { href: "/employer", label: "Dashboard", icon: Home },
         { href: "/employer/post-job", label: "Post Job", icon: Plus },
+        { href: "/employer/applications", label: "Applications", icon: FileText },
+        { href: "/employer/profile", label: "Profile", icon: User },
       ]
     case 'employee':
       return [
         { href: "/employee", label: "Dashboard", icon: Home },
         { href: "/employee/browse-jobs", label: "Browse Jobs", icon: Compass },
         { href: "/employee/saved", label: "My Jobs", icon: Bookmark },
+        { href: "/employee/profile", label: "Profile", icon: User },
       ]
     default: // guest
       return [
@@ -168,8 +171,7 @@ export default function Sidebar({
                 href={item.href}
                 className={`
                   flex items-center space-x-4 text-gray-700 dark:text-gray-300 
-                  ${theme.hoverColors} transition-all duration-200 ease-in-out
-                  py-3 px-4 rounded-lg group transform
+                  ${theme.hoverColors} py-3 px-4 rounded-lg group
                   ${isMobileMenuOpen 
                     ? 'translate-x-0 opacity-100' 
                     : 'translate-x-4 opacity-0'
@@ -177,7 +179,8 @@ export default function Sidebar({
                 `}
                 style={{
                   transitionDelay: isMobileMenuOpen ? `${index * 100}ms` : '0ms',
-                  transitionDuration: '300ms'
+                  transitionDuration: '300ms',
+                  transitionProperty: 'transform, opacity'
                 }}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -203,8 +206,7 @@ export default function Sidebar({
               href={item.href}
               className={`
                 flex items-center space-x-4 text-gray-700 dark:text-gray-300 
-                ${theme.hoverColors} transition-all duration-200 ease-in-out
-                py-3 px-4 rounded-lg group transform
+                ${theme.hoverColors} py-3 px-4 rounded-lg group
                 ${isMobileMenuOpen 
                   ? 'translate-x-0 opacity-100' 
                   : 'translate-x-4 opacity-0'
@@ -212,7 +214,8 @@ export default function Sidebar({
               `}
               style={{
                 transitionDelay: isMobileMenuOpen ? `${index * 100}ms` : '0ms',
-                transitionDuration: '300ms'
+                transitionDuration: '300ms',
+                transitionProperty: 'transform, opacity'
               }}
               onClick={() => setIsMobileMenuOpen(false)}
             >
@@ -227,8 +230,7 @@ export default function Sidebar({
           onClick={handleSignOut}
           className={`
             w-full flex items-center space-x-4 text-red-600 dark:text-red-400 
-            hover:bg-red-50/80 dark:hover:bg-red-950/80 transition-all duration-200 ease-in-out
-            py-3 px-4 rounded-lg group transform mt-4
+            hover:bg-red-50/80 dark:hover:bg-red-950/80 py-3 px-4 rounded-lg group mt-4
             ${isMobileMenuOpen 
               ? 'translate-x-0 opacity-100' 
               : 'translate-x-4 opacity-0'
@@ -236,7 +238,8 @@ export default function Sidebar({
           `}
           style={{
             transitionDelay: isMobileMenuOpen ? `${navigationItems.length * 100}ms` : '0ms',
-            transitionDuration: '300ms'
+            transitionDuration: '300ms',
+            transitionProperty: 'transform, opacity'
           }}
         >
           <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform duration-200 flex-shrink-0" />
@@ -265,12 +268,18 @@ export default function Sidebar({
         {/* Sidebar Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200/50 dark:border-gray-700/50">
           <div className="flex items-center">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
-              <AvatarFallback className={`${theme.avatarBg} text-white text-sm`}>
-                {userType === 'guest' ? <User className="h-4 w-4" /> : (userInitials || theme.avatarFallback)}
-              </AvatarFallback>
-            </Avatar>
+            <Link 
+              href={userType === 'employer' ? '/employer/profile' : userType === 'employee' ? '/employee/profile' : '/'}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="hover:opacity-80 transition-opacity"
+            >
+              <Avatar className="h-8 w-8 cursor-pointer">
+                <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
+                <AvatarFallback className={`${theme.avatarBg} text-white text-sm`}>
+                  {userType === 'guest' ? <User className="h-4 w-4" /> : (userInitials || theme.avatarFallback)}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
             <div className="ml-3">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {theme.title}

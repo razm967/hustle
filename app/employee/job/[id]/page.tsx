@@ -7,21 +7,27 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, DollarSign, MapPin, Clock, Calendar, MessageSquare, Briefcase, Bookmark, BookmarkCheck } from "lucide-react"
+import { ArrowLeft, DollarSign, MapPin, Clock, Calendar, MessageSquare, Briefcase, Bookmark, BookmarkCheck, Phone, Mail, MessageCircle } from "lucide-react"
 import { JobsService } from "@/lib/jobs-service"
 import type { JobWithStatus } from "@/lib/database-types"
+import { validateEmployeeProfileForApplication } from "@/lib/profile-validation"
+import ProfileCompletionPrompt from "@/components/profile-completion-prompt"
+import JobLocationMap from "@/components/ui/job-location-map"
+import type { ProfileValidationResult } from "@/lib/profile-validation"
 
 export default function JobDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const jobId = params.id as string
 
-  const [job, setJob] = useState<JobWithStatus | null>(null)
+  const [job, setJob] = useState<JobWithStatus & { employer?: { full_name?: string; email: string; phone?: string; company_name?: string } } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [applying, setApplying] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [profileValidation, setProfileValidation] = useState<ProfileValidationResult | null>(null)
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false)
 
   useEffect(() => {
     fetchJobDetails()
@@ -30,22 +36,20 @@ export default function JobDetailsPage() {
   const fetchJobDetails = async () => {
     try {
       setLoading(true)
-      // For now, we'll get all jobs and find the specific one
-      // In a real app, you'd have a getJobById method
-      const { data: jobs, error: jobsError } = await JobsService.getAvailableJobs()
+      // Get job details with employer information
+      const { data: jobData, error: jobsError } = await JobsService.getJobWithEmployer(jobId)
       
       if (jobsError) {
         setError(jobsError)
         return
       }
 
-      const foundJob = jobs?.find(j => j.id === jobId)
-      if (!foundJob) {
+      if (!jobData) {
         setError("Job not found")
         return
       }
 
-      setJob(foundJob)
+      setJob(jobData)
     } catch (err) {
       console.error('Error fetching job details:', err)
       setError("Failed to load job details")
@@ -56,6 +60,14 @@ export default function JobDetailsPage() {
 
   const handleApply = async () => {
     if (!job) return
+
+    // Check profile completeness before applying
+    const validation = await validateEmployeeProfileForApplication()
+    if (!validation.isValid) {
+      setProfileValidation(validation)
+      setShowProfilePrompt(true)
+      return
+    }
 
     setApplying(true)
     try {
@@ -99,6 +111,53 @@ export default function JobDetailsPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  // Contact functions
+  const handleEmailContact = () => {
+    if (!job?.employer?.email || job.employer.email === 'Contact via platform') {
+      alert('Contact information is not available. Please apply through the platform and the employer will be notified.')
+      return
+    }
+    
+    const subject = encodeURIComponent(`Regarding Job: ${job.title}`)
+    const body = encodeURIComponent(`Hi ${job.employer.full_name || 'there'},\n\nI'm interested in your job posting: "${job.title}"\n\nBest regards`)
+    
+    // Check if user is on mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    
+    if (isMobile) {
+      // On mobile, use mailto: which works well with mobile email apps
+      window.open(`mailto:${job.employer.email}?subject=${subject}&body=${body}`, '_blank')
+    } else {
+      // On desktop, open Gmail compose in browser
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(job.employer.email)}&su=${subject}&body=${body}`
+      window.open(gmailUrl, '_blank')
+    }
+  }
+
+  const handleWhatsAppContact = () => {
+    if (!job?.employer?.phone) return
+    
+    // Remove all non-digits and format for WhatsApp
+    const phoneNumber = job.employer.phone.replace(/\D/g, '')
+    const message = encodeURIComponent(`Hi ${job.employer.full_name || 'there'}, I'm interested in your job posting: "${job.title}"`)
+    
+    // Check if user is on mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    
+    if (isMobile) {
+      // On mobile, use wa.me which opens the WhatsApp app directly
+      window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank')
+    } else {
+      // On desktop, open WhatsApp Web
+      window.open(`https://web.whatsapp.com/send?phone=${phoneNumber}&text=${message}`, '_blank')
+    }
+  }
+
+  const handlePhoneCall = () => {
+    if (!job?.employer?.phone) return
+    window.open(`tel:${job.employer.phone}`, '_self')
   }
 
   if (loading) {
@@ -250,8 +309,94 @@ export default function JobDetailsPage() {
           </CardContent>
         </Card>
 
+        {/* Employer Contact Information */}
+        {job.employer && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Contact Employer</CardTitle>
+              <CardDescription>
+                Get in touch with {job.employer.full_name || 'the employer'} 
+                {job.employer.company_name && ` from ${job.employer.company_name}`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-3">
+                {/* Email Button */}
+                <Button 
+                  onClick={handleEmailContact}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  Email
+                </Button>
+
+                {/* WhatsApp Button */}
+                {job.employer.phone && (
+                  <Button 
+                    onClick={handleWhatsAppContact}
+                    variant="outline"
+                    className="flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp
+                  </Button>
+                )}
+
+                {/* Phone Button */}
+                {job.employer.phone && (
+                  <Button 
+                    onClick={handlePhoneCall}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Phone className="h-4 w-4" />
+                    Call
+                  </Button>
+                )}
+              </div>
+              
+              {/* Employer Info */}
+              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="text-sm space-y-1">
+                  <p><strong>Contact:</strong> {job.employer.full_name || 'Not specified'}</p>
+                  {job.employer.company_name && (
+                    <p><strong>Company:</strong> {job.employer.company_name}</p>
+                  )}
+                  <p><strong>Email:</strong> {job.employer.email}</p>
+                  {job.employer.phone && (
+                    <p><strong>Phone:</strong> {job.employer.phone}</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Job Location Map */}
+        {job.location && (
+          <JobLocationMap 
+            jobLocation={job.location}
+            jobLatitude={job.latitude}
+            jobLongitude={job.longitude}
+            className="mb-6"
+          />
+        )}
+
+        {/* Profile Completion Prompt */}
+        {showProfilePrompt && profileValidation && !profileValidation.isValid && (
+          <div className="mb-6">
+            <ProfileCompletionPrompt 
+              validation={profileValidation}
+              userType="employee"
+              action="apply for jobs"
+              onClose={() => setShowProfilePrompt(false)}
+            />
+          </div>
+        )}
+
         {/* Application Form - Only show if not already applied */}
-        {job.application_status !== 'applied' && (
+        {job.application_status !== 'applied' && !showProfilePrompt && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

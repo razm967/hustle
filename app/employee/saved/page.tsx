@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, BookmarkCheck, CheckCircle, Clock as ClockIcon } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, BookmarkCheck, CheckCircle, Clock as ClockIcon, XCircle, Filter } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { JobsService } from "@/lib/jobs-service"
 import type { JobWithStatus } from "@/lib/database-types"
@@ -16,6 +17,7 @@ export default function SavedJobsPage() {
   const [appliedJobs, setAppliedJobs] = useState<JobWithStatus[]>([])
   const [loading, setLoading] = useState(true)
   const [savingJobId, setSavingJobId] = useState<string | null>(null)
+  const [applicationFilter, setApplicationFilter] = useState<string>("all")
 
   useEffect(() => {
     loadJobs()
@@ -71,18 +73,35 @@ export default function SavedJobsPage() {
             <CardTitle className="text-lg text-green-600 dark:text-green-400 flex items-center gap-2">
               {job.title}
               {/* Status Badges */}
-              {job.application_status === 'applied' && (
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-                  Applied
-                </Badge>
+              {job.application_status === 'applied' && job.application_result && (
+                <>
+                  {job.application_result === 'pending' && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                      <ClockIcon className="h-3 w-3 mr-1" />
+                      Pending
+                    </Badge>
+                  )}
+                  {job.application_result === 'accepted' && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Accepted
+                    </Badge>
+                  )}
+                  {job.application_result === 'rejected' && (
+                    <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-xs">
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Rejected
+                    </Badge>
+                  )}
+                </>
               )}
               {job.status === 'completed' && (
                 <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
                   <CheckCircle className="h-3 w-3 mr-1" />
-                  Completed
+                  Job Completed
                 </Badge>
               )}
-              {job.status === 'in_progress' && (
+              {job.status === 'in_progress' && job.application_result === 'accepted' && (
                 <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs">
                   <ClockIcon className="h-3 w-3 mr-1" />
                   In Progress
@@ -90,13 +109,10 @@ export default function SavedJobsPage() {
               )}
             </CardTitle>
             <CardDescription className="mt-1">
-              Posted {new Date(job.created_at).toLocaleDateString()}
+              Applied on {new Date(job.created_at).toLocaleDateString()}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-              {job.status}
-            </Badge>
             {/* Unsave Button for saved jobs */}
             {showUnsaveButton && (
               <Button
@@ -193,10 +209,24 @@ export default function SavedJobsPage() {
     </div>
   )
 
-  // Filter applied jobs by status
-  const pendingJobs = appliedJobs.filter(job => job.status === 'open')
-  const inProgressJobs = appliedJobs.filter(job => job.status === 'in_progress')
-  const completedJobs = appliedJobs.filter(job => job.status === 'completed')
+  // Filter applied jobs by application status
+  const getFilteredAppliedJobs = () => {
+    switch (applicationFilter) {
+      case "accepted":
+        return appliedJobs.filter(job => job.application_result === 'accepted')
+      case "rejected":
+        return appliedJobs.filter(job => job.application_result === 'rejected')
+      default:
+        return appliedJobs
+    }
+  }
+
+  const filteredAppliedJobs = getFilteredAppliedJobs()
+
+  // Count applications by status
+  const pendingCount = appliedJobs.filter(job => job.application_result === 'pending').length
+  const acceptedCount = appliedJobs.filter(job => job.application_result === 'accepted').length
+  const rejectedCount = appliedJobs.filter(job => job.application_result === 'rejected').length
 
   if (loading) {
     return (
@@ -220,22 +250,14 @@ export default function SavedJobsPage() {
       </div>
 
       <Tabs defaultValue="saved" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="saved" className="flex items-center gap-2">
             <Bookmark className="h-4 w-4" />
-            Saved ({savedJobs.length})
+            Saved Jobs ({savedJobs.length})
           </TabsTrigger>
           <TabsTrigger value="applied" className="flex items-center gap-2">
             <ClockIcon className="h-4 w-4" />
-            Applied ({pendingJobs.length})
-          </TabsTrigger>
-          <TabsTrigger value="progress" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            In Progress ({inProgressJobs.length})
-          </TabsTrigger>
-          <TabsTrigger value="completed" className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            Completed ({completedJobs.length})
+            My Applications ({appliedJobs.length})
           </TabsTrigger>
         </TabsList>
 
@@ -259,53 +281,71 @@ export default function SavedJobsPage() {
 
         <TabsContent value="applied" className="mt-6">
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Applied Jobs ({pendingJobs.length})
-            </h2>
-            {pendingJobs.length === 0 ? (
-              renderEmptyState(
-                "No Applied Jobs", 
-                "Jobs you've applied to will appear here. Start applying to opportunities!"
-              )
-            ) : (
-              <div className="grid gap-4">
-                {pendingJobs.map((job) => renderJobCard(job))}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                My Applications ({appliedJobs.length})
+              </h2>
+              
+              {/* Application Status Filter */}
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <Select value={applicationFilter} onValueChange={setApplicationFilter}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Applications ({appliedJobs.length})</SelectItem>
+                    <SelectItem value="accepted">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        Accepted ({acceptedCount})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="rejected">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-4 w-4 text-red-500" />
+                        Rejected ({rejectedCount})
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </div>
-        </TabsContent>
+            </div>
 
-        <TabsContent value="progress" className="mt-6">
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Jobs In Progress ({inProgressJobs.length})
-            </h2>
-            {inProgressJobs.length === 0 ? (
+            {/* Application Status Summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <Card className="text-center">
+                <CardContent className="pt-4">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{appliedJobs.length}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Total Applications</div>
+                </CardContent>
+              </Card>
+              <Card className="text-center">
+                <CardContent className="pt-4">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{acceptedCount}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Accepted</div>
+                </CardContent>
+              </Card>
+              <Card className="text-center">
+                <CardContent className="pt-4">
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">{rejectedCount}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Rejected</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {filteredAppliedJobs.length === 0 ? (
               renderEmptyState(
-                "No Jobs In Progress", 
-                "Jobs that are currently being worked on will appear here."
+                applicationFilter === "all" ? "No Applications Yet" : 
+                applicationFilter === "accepted" ? "No Accepted Applications" :
+                "No Rejected Applications",
+                applicationFilter === "all" ? "Jobs you've applied to will appear here. Start applying to opportunities!" :
+                applicationFilter === "accepted" ? "Applications that have been accepted will appear here." :
+                "Applications that have been rejected will appear here."
               )
             ) : (
               <div className="grid gap-4">
-                {inProgressJobs.map((job) => renderJobCard(job))}
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="completed" className="mt-6">
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Completed Jobs ({completedJobs.length})
-            </h2>
-            {completedJobs.length === 0 ? (
-              renderEmptyState(
-                "No Completed Jobs", 
-                "Jobs you've completed will appear here."
-              )
-            ) : (
-              <div className="grid gap-4">
-                {completedJobs.map((job) => renderJobCard(job))}
+                {filteredAppliedJobs.map((job) => renderJobCard(job))}
               </div>
             )}
           </div>

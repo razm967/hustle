@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -14,6 +14,9 @@ import LocationInput from "@/components/ui/location-input"
 import TagSelector from "@/components/ui/tag-selector"
 import { JobsService, type CreateJobData } from "@/lib/jobs-service"
 import type { Job } from "@/lib/database-types"
+import { validateEmployerProfileForJobPosting } from "@/lib/profile-validation"
+import ProfileCompletionPrompt from "@/components/profile-completion-prompt"
+import type { ProfileValidationResult } from "@/lib/profile-validation"
 
 interface JobPostFormProps {
   onJobPost?: (job: Job) => void
@@ -46,11 +49,33 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [profileValidation, setProfileValidation] = useState<ProfileValidationResult | null>(null)
+  const [showForm, setShowForm] = useState(false)
+
+  // Check profile completeness on component mount
+  useEffect(() => {
+    checkProfileCompleteness()
+  }, [])
+
+  const checkProfileCompleteness = async () => {
+    const validation = await validateEmployerProfileForJobPosting()
+    setProfileValidation(validation)
+    setShowForm(validation.isValid)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setIsSubmitting(true)
+    
+    // Check profile completeness before submitting
+    const validation = await validateEmployerProfileForJobPosting()
+    if (!validation.isValid) {
+      setProfileValidation(validation)
+      setShowForm(false)
+      setIsSubmitting(false)
+      return
+    }
     
     // Simple validation
     if (!formData.title || !formData.description || !formData.pay) {
@@ -144,6 +169,23 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
       ...formData,
       tags
     })
+  }
+
+  // Show profile completion prompt if profile is incomplete
+  if (!showForm && profileValidation && !profileValidation.isValid) {
+    return (
+      <div className="w-full max-w-2xl mx-auto">
+        <ProfileCompletionPrompt 
+          validation={profileValidation}
+          userType="employer"
+          action="post a job"
+          onClose={() => {
+            setShowForm(true)
+            setProfileValidation(null)
+          }}
+        />
+      </div>
+    )
   }
 
   return (

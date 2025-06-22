@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Menu, X, Home, User, Info, LogOut, Compass, Bookmark, Plus } from "lucide-react"
+import { Menu, X, Home, User, Info, LogOut, Compass, Bookmark, Plus, FileText } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
@@ -17,6 +17,7 @@ const getNavigationItems = (userType: 'guest' | 'employer' | 'employee') => {
       return [
         { href: "/employer", label: "Dashboard", icon: Home },
         { href: "/employer/post-job", label: "Post Job", icon: Plus },
+        { href: "/employer/applications", label: "Applications", icon: FileText },
       ]
     case 'employee':
       return [
@@ -104,14 +105,16 @@ export default function Header({
           
           {/* Left side - Profile Picture Button */}
           <div className="flex items-center">
-            <Button variant="ghost" size="sm" className="p-0 h-auto">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
-                <AvatarFallback className="bg-blue-600 text-white">
-                  {userInitials || (userType === 'employer' ? 'EM' : userType === 'employee' ? 'EE' : 'HU')}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
+            <Link href={userType === 'employer' ? '/employer/profile' : userType === 'employee' ? '/employee/profile' : '/'}>
+              <Button variant="ghost" size="sm" className="p-0 h-auto hover:opacity-80 transition-opacity">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
+                  <AvatarFallback className="bg-blue-600 text-white">
+                    {userInitials || (userType === 'employer' ? 'EM' : userType === 'employee' ? 'EE' : 'HU')}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </Link>
             <div className="ml-3 hidden sm:block">
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {title}

@@ -5,6 +5,18 @@ export interface UserProfile {
   email: string
   role: 'employer' | 'employee'
   full_name?: string
+  birth_date?: string
+  phone?: string
+  location?: string
+  latitude?: number
+  longitude?: number
+  bio?: string
+  // Employee-specific fields
+  availability?: string
+  // Employer-specific fields
+  company_name?: string
+  company_website?: string
+  company_description?: string
   created_at: string
   updated_at: string
 }
@@ -47,5 +59,6 @@ export interface SavedJob {
 // Extended job interface with application status for employee views
 export interface JobWithStatus extends Job {
   application_status?: 'applied' | 'saved' | null
+  application_result?: 'pending' | 'accepted' | 'rejected'
   is_saved?: boolean
 } 

@@ -10,7 +10,10 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 // Mapbox API configuration
-const MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoicmF6bTk2NyIsImEiOiJjbWM2MzA0ZXQwazloMmtzY3Ryd3IydnZuIn0.s1VVHgIDU4h-DUn51rEVvA"
+const MAPBOX_ACCESS_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
+if (!MAPBOX_ACCESS_TOKEN) {
+  throw new Error('NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN is not defined in environment variables')
+}
 mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN
 
 interface LocationSuggestion {
@@ -137,7 +140,7 @@ export default function LocationInput({
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${coordinates[0]},${coordinates[1]}.json?` +
         new URLSearchParams({
-          access_token: MAPBOX_ACCESS_TOKEN,
+          access_token: MAPBOX_ACCESS_TOKEN as string,
           language: 'he,en',
           types: 'place,locality,neighborhood,address,poi'
         })
@@ -172,7 +175,7 @@ export default function LocationInput({
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
         new URLSearchParams({
-          access_token: MAPBOX_ACCESS_TOKEN,
+          access_token: MAPBOX_ACCESS_TOKEN as string,
           country: 'il', // Focus on Israel for Hebrew support
           language: 'he,en', // Support both Hebrew and English
           types: 'place,locality,neighborhood,address,poi', // Various location types

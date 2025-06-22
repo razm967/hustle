@@ -1,6 +1,25 @@
 import { supabase } from "./supabase"
 
 /**
+ * Calculates age from birth date
+ */
+export function calculateAge(birthDate?: string): number | null {
+  if (!birthDate) return null
+  
+  const birth = new Date(birthDate)
+  const today = new Date()
+  
+  let age = today.getFullYear() - birth.getFullYear()
+  const monthDiff = today.getMonth() - birth.getMonth()
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--
+  }
+  
+  return age
+}
+
+/**
  * Gets user initials from full name
  */
 export function getUserInitials(fullName?: string, email?: string): string {
