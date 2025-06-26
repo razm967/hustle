@@ -3,7 +3,27 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-// Client-side Supabase client with optimized realtime settings
+// Custom storage implementation using sessionStorage for tab isolation
+const tabIsolatedStorage = {
+  getItem: (key: string) => {
+    if (typeof window !== 'undefined') {
+      return window.sessionStorage.getItem(key)
+    }
+    return null
+  },
+  setItem: (key: string, value: string) => {
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem(key, value)
+    }
+  },
+  removeItem: (key: string) => {
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(key)
+    }
+  }
+}
+
+// Client-side Supabase client with tab-isolated sessions
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   realtime: {
     params: {
@@ -14,6 +34,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     timeout: 20000, // Increase timeout to 20s
   },
   auth: {
+    storage: tabIsolatedStorage, // Use sessionStorage for tab isolation
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
