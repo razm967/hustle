@@ -5,7 +5,7 @@ import "../globals.css";
 import { useState } from "react";
 import HeroSection from "@/components/heroSection";
 import Sidebar from "@/components/Sidebar";
-import AuthGuard from "@/components/auth-guard";
+import RoleAuthGuard from "@/components/role-auth-guard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +29,7 @@ export default function EmployeeLayout({
   };
 
   return (
-    <AuthGuard>
+    <RoleAuthGuard requiredRole="employee">
       {/* HeroSection Component - Clean with only sign out */}
         <HeroSection 
           isMobileMenuOpen={isMobileMenuOpen} 
@@ -50,6 +50,6 @@ export default function EmployeeLayout({
       <div className="employee-content">
           {children}
       </div>
-    </AuthGuard>
+    </RoleAuthGuard>
   )
 } 
