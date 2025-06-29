@@ -51,6 +51,7 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [profileValidation, setProfileValidation] = useState<ProfileValidationResult | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   // Check profile completeness on component mount
   useEffect(() => {
@@ -58,9 +59,17 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
   }, [])
 
   const checkProfileCompleteness = async () => {
-    const validation = await validateEmployerProfileForJobPosting()
-    setProfileValidation(validation)
-    setShowForm(validation.isValid)
+    try {
+      setIsLoading(true)
+      const validation = await validateEmployerProfileForJobPosting()
+      setProfileValidation(validation)
+      setShowForm(validation.isValid)
+    } catch (error) {
+      console.error('Error checking profile:', error)
+      setShowForm(false)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -169,6 +178,35 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
       ...formData,
       tags
     })
+  }
+
+  // Show loading skeleton while checking profile
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-2xl mx-auto">
+        <Card>
+          <CardHeader>
+            <div className="animate-pulse space-y-3">
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="animate-pulse space-y-6">
+              {/* Form field skeletons */}
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="space-y-2">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+                  <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                </div>
+              ))}
+              {/* Submit button skeleton */}
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   // Show profile completion prompt if profile is incomplete

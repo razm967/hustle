@@ -9,11 +9,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import LocationInput from '@/components/ui/location-input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Building, Mail, MapPin, Phone, Globe, Save, Calendar } from 'lucide-react'
+import { Loader2, Building, Mail, Phone, Globe, Save, Calendar } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getCurrentUserProfile, getUserInitials } from '@/lib/user-utils'
 import type { UserProfile } from '@/lib/database-types'
@@ -24,9 +23,6 @@ const profileSchema = z.object({
   email: z.string().email('Invalid email address'),
   birth_date: z.string().optional(),
   phone: z.string().optional(),
-  location: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
   bio: z.string().optional(),
   company_name: z.string().optional(),
   company_website: z.string().optional(),
@@ -72,9 +68,6 @@ export default function EmployerProfilePage() {
         setValue('email', user?.email || '')
         setValue('birth_date', profile.birth_date || '')
         setValue('phone', profile.phone || '')
-        setValue('location', profile.location || '')
-        setValue('latitude', profile.latitude)
-        setValue('longitude', profile.longitude)
         setValue('bio', profile.bio || '')
         setValue('company_name', profile.company_name || '')
         setValue('company_website', profile.company_website || '')
@@ -107,9 +100,6 @@ export default function EmployerProfilePage() {
           full_name: data.full_name,
           birth_date: data.birth_date,
           phone: data.phone,
-          location: data.location,
-          latitude: data.latitude,
-          longitude: data.longitude,
           bio: data.bio,
           company_name: data.company_name,
           company_website: data.company_website,
@@ -238,23 +228,9 @@ export default function EmployerProfilePage() {
                       {...register('phone')}
                     />
                   </div>
-
-                  <div className="space-y-2">
-                    <LocationInput
-                      value={watch('location') || ''}
-                      onChange={(value, coordinates) => {
-                        setValue('location', value)
-                        // Store coordinates for potential future use
-                        if (coordinates) {
-                          setValue('latitude', coordinates[1])
-                          setValue('longitude', coordinates[0])
-                        }
-                      }}
-                      placeholder="Enter your city/area"
-                    />
-                  </div>
                 </div>
 
+                {/* Personal Bio */}
                 <div className="space-y-2">
                   <Label htmlFor="bio">About Me</Label>
                   <Textarea

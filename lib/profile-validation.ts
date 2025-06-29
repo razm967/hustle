@@ -8,7 +8,7 @@ export interface ProfileValidationResult {
 
 /**
  * Validates employer profile for job posting requirements
- * Requires: birth_date, phone, location
+ * Requires: birth_date, phone
  */
 export async function validateEmployerProfileForJobPosting(): Promise<ProfileValidationResult> {
   try {
@@ -30,10 +30,6 @@ export async function validateEmployerProfileForJobPosting(): Promise<ProfileVal
     
     if (!profile.phone || profile.phone.trim() === '') {
       missingFields.push('phone number')
-    }
-    
-    if (!profile.location || profile.location.trim() === '') {
-      missingFields.push('location')
     }
 
     if (missingFields.length > 0) {
@@ -61,7 +57,7 @@ export async function validateEmployerProfileForJobPosting(): Promise<ProfileVal
 
 /**
  * Validates employee profile for job application requirements
- * Requires: birth_date, phone, location
+ * Requires: birth_date, phone
  */
 export async function validateEmployeeProfileForApplication(): Promise<ProfileValidationResult> {
   try {
@@ -83,10 +79,6 @@ export async function validateEmployeeProfileForApplication(): Promise<ProfileVa
     
     if (!profile.phone || profile.phone.trim() === '') {
       missingFields.push('phone number')
-    }
-    
-    if (!profile.location || profile.location.trim() === '') {
-      missingFields.push('location')
     }
 
     if (missingFields.length > 0) {

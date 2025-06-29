@@ -275,6 +275,16 @@ export default function JobDetailsPage() {
               )}
             </div>
 
+            {/* Job Location Map */}
+            {job.location && (
+              <JobLocationMap 
+                jobLocation={job.location}
+                jobLatitude={job.latitude}
+                jobLongitude={job.longitude}
+                className="mb-6"
+              />
+            )}
+
             {/* Full Description */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
@@ -371,16 +381,6 @@ export default function JobDetailsPage() {
               </div>
             </CardContent>
           </Card>
-        )}
-
-        {/* Job Location Map */}
-        {job.location && (
-          <JobLocationMap 
-            jobLocation={job.location}
-            jobLatitude={job.latitude}
-            jobLongitude={job.longitude}
-            className="mb-6"
-          />
         )}
 
         {/* Profile Completion Prompt */}
