@@ -306,6 +306,34 @@ export default function EmployeeProfilePage() {
                   </>
                 )}
               </Button>
+
+              {/* Youth Work Rights Information */}
+              <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <h3 className="text-lg font-semibold text-blue-800 mb-2">Know Your Rights as a Young Worker</h3>
+                <p className="text-blue-700 mb-4">
+                  As a young worker, it's crucial to understand your rights and protect yourself from workplace exploitation. 
+                  Be aware of minimum wage requirements, maximum working hours, break entitlements, and safe working conditions. 
+                  Don't hesitate to speak up if something doesn't feel right.
+                </p>
+                <p className="text-blue-700 mb-4">
+                  At Hustle, we're committed to creating a safe and fair environment for young workers. Your well-being and 
+                  professional growth are our top priorities. We actively monitor job postings and employer conduct to prevent 
+                  exploitation and ensure compliance with youth labor laws.
+                </p>
+                <a 
+                  href="https://www.dol.gov/agencies/whd/youthrules"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Learn more about youth labor rights
+                  <svg className="w-4 h-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
+              </div>
             </form>
           </CardContent>
         </Card>

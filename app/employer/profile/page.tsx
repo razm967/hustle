@@ -25,9 +25,6 @@ const profileSchema = z.object({
   birth_date: z.string().optional(),
   phone: z.string().optional(),
   bio: z.string().optional(),
-  company_name: z.string().optional(),
-  company_website: z.string().optional(),
-  company_description: z.string().optional(),
 })
 
 type ProfileFormData = z.infer<typeof profileSchema>
@@ -70,9 +67,6 @@ export default function EmployerProfilePage() {
         setValue('birth_date', profile.birth_date || '')
         setValue('phone', profile.phone || '')
         setValue('bio', profile.bio || '')
-        setValue('company_name', profile.company_name || '')
-        setValue('company_website', profile.company_website || '')
-        setValue('company_description', profile.company_description || '')
       }
     } catch (error) {
       console.error('Error loading user profile:', error)
@@ -102,9 +96,6 @@ export default function EmployerProfilePage() {
           birth_date: data.birth_date,
           phone: data.phone,
           bio: data.bio,
-          company_name: data.company_name,
-          company_website: data.company_website,
-          company_description: data.company_description,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id)
@@ -273,48 +264,6 @@ export default function EmployerProfilePage() {
                     placeholder="Tell potential employees about yourself and your hiring approach..."
                     rows={3}
                     {...register('bio')}
-                  />
-                </div>
-              </div>
-
-              {/* Company Information */}
-              <div className="space-y-4 border-t pt-6">
-                <h3 className="text-lg font-medium">Company Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="company_name">
-                      <Building className="h-4 w-4 inline mr-2" />
-                      Company Name
-                    </Label>
-                    <Input
-                      id="company_name"
-                      type="text"
-                      placeholder="Enter your company name"
-                      {...register('company_name')}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="company_website">
-                      <Globe className="h-4 w-4 inline mr-2" />
-                      Company Website
-                    </Label>
-                    <Input
-                      id="company_website"
-                      type="url"
-                      placeholder="https://www.example.com"
-                      {...register('company_website')}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="company_description">Company Description</Label>
-                  <Textarea
-                    id="company_description"
-                    placeholder="Describe your company, what you do, and what makes it a great place to work..."
-                    rows={4}
-                    {...register('company_description')}
                   />
                 </div>
               </div>

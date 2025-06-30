@@ -81,8 +81,12 @@ export function AvatarUpload({
 
   return (
     <div className="relative group">
-      <Avatar className={className}>
-        <AvatarImage src={currentAvatarUrl || ''} alt="Profile" />
+      <Avatar className={`${className} overflow-hidden`}>
+        <AvatarImage 
+          src={currentAvatarUrl || ''} 
+          alt="Profile" 
+          className="object-cover"
+        />
         <AvatarFallback className="bg-green-600 text-white text-lg">
           {userInitials}
         </AvatarFallback>
