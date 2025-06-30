@@ -101,8 +101,40 @@ export class JobsService {
         return { data: null, error: jobsError.message }
       }
 
-      if (!user || !jobs) {
-        return { data: jobs as JobWithStatus[], error: null }
+      if (!jobs) {
+        return { data: [], error: null }
+      }
+
+      // Get employer profiles for all jobs
+      const employerIds = [...new Set(jobs.map(job => job.employer_id))]
+      const { data: employers, error: employersError } = await supabase
+        .from('user_profiles')
+        .select('id, full_name, company_name, email')
+        .in('id', employerIds)
+
+      if (employersError) {
+        console.error('Error fetching employers:', employersError)
+        return { data: null, error: employersError.message }
+      }
+
+      // Create a map of employer profiles
+      const employerMap = new Map(
+        (employers || []).map(employer => [
+          employer.id,
+          employer
+        ])
+      )
+
+      if (!user) {
+        // Add employer info to jobs and return if no user
+        const jobsWithEmployers = jobs.map(job => ({
+          ...job,
+          employer_name: employerMap.get(job.employer_id)?.company_name || 
+                        employerMap.get(job.employer_id)?.full_name || 
+                        'Unknown Employer',
+          employer_email: employerMap.get(job.employer_id)?.email
+        }))
+        return { data: jobsWithEmployers as JobWithStatus[], error: null }
       }
 
       // Get user's applications and saved jobs
@@ -125,12 +157,16 @@ export class JobsService {
       // Filter out jobs where the current employee has been rejected
       const availableJobs = jobs.filter(job => !rejectedJobIds.has(job.id))
 
-      // Add status information to jobs
+      // Add status information and employer name to jobs
       const jobsWithStatus: JobWithStatus[] = availableJobs.map(job => ({
         ...job,
         application_status: appliedJobIds.has(job.id) ? 'applied' as const : 
                           savedJobIds.has(job.id) ? 'saved' as const : null,
-        is_saved: savedJobIds.has(job.id)
+        is_saved: savedJobIds.has(job.id),
+        employer_name: employerMap.get(job.employer_id)?.company_name || 
+                      employerMap.get(job.employer_id)?.full_name || 
+                      'Unknown Employer',
+        employer_email: employerMap.get(job.employer_id)?.email
       }))
 
       return { data: jobsWithStatus, error: null }

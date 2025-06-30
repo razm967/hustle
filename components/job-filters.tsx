@@ -27,6 +27,7 @@ export interface JobFilters {
   userLocation?: { name: string; coordinates: [number, number] }
   maxDistance?: number
   tags?: string[]
+  employerName?: string
 }
 
 interface JobFiltersProps {
@@ -41,6 +42,7 @@ export default function JobFilters({ filters, onFiltersChange, onClearFilters, j
   const [localMinPay, setLocalMinPay] = useState(filters.minPay?.toString() || "")
   const [localMaxPay, setLocalMaxPay] = useState(filters.maxPay?.toString() || "")
   const [localLocation, setLocalLocation] = useState(filters.location || "")
+  const [localEmployerName, setLocalEmployerName] = useState(filters.employerName || "")
   const [paymentError, setPaymentError] = useState<string | null>(null)
 
   // Duration options
@@ -112,11 +114,19 @@ export default function JobFilters({ filters, onFiltersChange, onClearFilters, j
     })
   }
 
+  const handleEmployerNameChange = () => {
+    onFiltersChange({
+      ...filters,
+      employerName: localEmployerName || undefined
+    })
+  }
+
   const handleClearAll = () => {
     // Reset local states
     setLocalMinPay("")
     setLocalMaxPay("")
     setLocalLocation("")
+    setLocalEmployerName("")
     setPaymentError(null)
     // Clear filters
     onClearFilters()
@@ -130,6 +140,7 @@ export default function JobFilters({ filters, onFiltersChange, onClearFilters, j
     if (filters.location) count++
     if (filters.userLocation && filters.maxDistance) count++
     if (filters.tags && filters.tags.length > 0) count++
+    if (filters.employerName) count++
     return count
   }
 
@@ -286,6 +297,19 @@ export default function JobFilters({ filters, onFiltersChange, onClearFilters, j
               onChange={(tags) => onFiltersChange({ ...filters, tags: tags.length > 0 ? tags : undefined })}
             />
           </div>
+
+          {/* Employer Name Filter */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              Employer Name
+            </Label>
+            <Input
+              placeholder="Enter employer name"
+              value={localEmployerName}
+              onChange={(e) => setLocalEmployerName(e.target.value)}
+              onBlur={handleEmployerNameChange}
+            />
+          </div>
         </div>
 
         {/* Active Filters Display */}
@@ -379,6 +403,22 @@ export default function JobFilters({ filters, onFiltersChange, onClearFilters, j
                     onClick={(e) => {
                       e.stopPropagation()
                       onFiltersChange({ ...filters, tags: undefined })
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+                             {filters.employerName && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Employer: {filters.employerName}
+                  <button
+                    type="button"
+                    className="ml-1 hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setLocalEmployerName("")
+                      onFiltersChange({ ...filters, employerName: undefined })
                     }}
                   >
                     <X className="h-3 w-3" />

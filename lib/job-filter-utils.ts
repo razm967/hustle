@@ -83,6 +83,46 @@ export function filterJobs(jobs: (Job | JobWithStatus)[], filters: JobFilters): 
       
       if (!hasMatchingTag) return false
     }
+
+    // Employer name filter
+    if (filters.employerName) {
+      console.log('Filtering by employer name:', filters.employerName);
+      console.log('Job:', job);
+      
+      if (!isJobWithStatus(job)) {
+        console.log('Job is not JobWithStatus');
+        return false;
+      }
+      
+      if (!job.employer_name) {
+        console.log('No employer_name found');
+        return false;
+      }
+      
+      const jobEmployerName = job.employer_name.toLowerCase()
+      const filterEmployerName = filters.employerName.toLowerCase()
+      
+      console.log('Job employer name:', jobEmployerName);
+      console.log('Filter employer name:', filterEmployerName);
+      
+      // Split filter into words and remove empty strings for partial matching
+      const searchTerms = filterEmployerName.split(/[\s,]+/).filter(term => term.length > 0)
+      console.log('Search terms:', searchTerms);
+      
+      // Check if ANY of the search terms are found in the employer name
+      const hasMatchingTerm = searchTerms.some(term => {
+        const matches = jobEmployerName.includes(term);
+        console.log(`Checking term "${term}": ${matches}`);
+        return matches;
+      })
+      
+      if (!hasMatchingTerm) {
+        console.log('No matching terms found');
+        return false;
+      }
+      
+      console.log('Match found!');
+    }
     
     return true
   })
@@ -196,49 +236,58 @@ function normalizeDuration(duration: string): string {
   return durationMap[normalized] || normalized
 }
 
+// Type guard to check if a job is JobWithStatus
+function isJobWithStatus(job: Job | JobWithStatus): job is JobWithStatus {
+  return 'employer_name' in job
+}
+
 /**
  * Gets filter summary for display
  */
 export function getFilterSummary(filters: JobFilters): string {
-  const parts: string[] = []
+  const summaryParts: string[] = []
   
   if (filters.dateRange?.from) {
     if (filters.dateRange.to && filters.dateRange.from.getTime() !== filters.dateRange.to.getTime()) {
-      parts.push(`dates: ${filters.dateRange.from.toLocaleDateString()} - ${filters.dateRange.to.toLocaleDateString()}`)
+      summaryParts.push(`dates: ${filters.dateRange.from.toLocaleDateString()} - ${filters.dateRange.to.toLocaleDateString()}`)
     } else {
-      parts.push(`date: ${filters.dateRange.from.toLocaleDateString()}`)
+      summaryParts.push(`date: ${filters.dateRange.from.toLocaleDateString()}`)
     }
   }
   
   if (filters.minPay !== undefined || filters.maxPay !== undefined) {
     if (filters.minPay !== undefined && filters.maxPay !== undefined) {
-      parts.push(`pay: $${filters.minPay} - $${filters.maxPay}`)
+      summaryParts.push(`pay: $${filters.minPay} - $${filters.maxPay}`)
     } else if (filters.minPay !== undefined) {
-      parts.push(`pay: $${filters.minPay}+`)
+      summaryParts.push(`pay: $${filters.minPay}+`)
     } else {
-      parts.push(`pay: up to $${filters.maxPay}`)
+      summaryParts.push(`pay: up to $${filters.maxPay}`)
     }
   }
   
   if (filters.duration) {
-    parts.push(`duration: ${filters.duration}`)
+    summaryParts.push(`duration: ${filters.duration}`)
   }
   
   if (filters.location) {
-    parts.push(`location: ${filters.location}`)
+    summaryParts.push(`location: ${filters.location}`)
   }
   
   if (filters.userLocation && filters.maxDistance !== undefined) {
-    parts.push(`within ${filters.maxDistance}km of ${filters.userLocation.name}`)
+    summaryParts.push(`within ${filters.maxDistance}km of ${filters.userLocation.name}`)
   }
   
   if (filters.tags && filters.tags.length > 0) {
     if (filters.tags.length === 1) {
-      parts.push(`tag: ${filters.tags[0]}`)
+      summaryParts.push(`tag: ${filters.tags[0]}`)
     } else {
-      parts.push(`tags: ${filters.tags.join(', ')}`)
+      summaryParts.push(`tags: ${filters.tags.join(', ')}`)
     }
   }
   
-  return parts.length > 0 ? `Filtered by ${parts.join(', ')}` : ''
+  if (filters.employerName) {
+    summaryParts.push(`Employer: ${filters.employerName}`)
+  }
+  
+  return summaryParts.join(' • ')
 } 

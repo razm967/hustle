@@ -79,8 +79,14 @@ export default function JobListings({ jobs, onJobSaved }: JobListingsProps) {
                       </Badge>
                     )}
                   </CardTitle>
-                  <CardDescription className="mt-1">
+                  <CardDescription className="mt-1 flex items-center gap-2">
                     Posted {new Date(job.created_at).toLocaleDateString()}
+                    {job.employer_name && (
+                      <>
+                        <span className="text-gray-400">•</span>
+                        <span>by {job.employer_name}</span>
+                      </>
+                    )}
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
