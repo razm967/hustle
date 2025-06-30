@@ -13,6 +13,7 @@ export interface CreateJobData {
   duration?: string
   available_dates?: string
   tags?: string[]
+  images?: string[]
 }
 
 export class JobsService {
@@ -26,16 +27,23 @@ export class JobsService {
         return { data: null, error: "User not authenticated" }
       }
 
-      // Insert job into database
-      const { data, error } = await supabase
-        .from('jobs')
-        .insert({
-          ...jobData,
+      // Start a transaction
+      const { data, error } = await supabase.rpc('create_job_with_images', {
+        job_data: {
+          title: jobData.title,
+          description: jobData.description,
+          location: jobData.location,
+          latitude: jobData.latitude,
+          longitude: jobData.longitude,
+          pay: jobData.pay,
+          duration: jobData.duration,
+          available_dates: jobData.available_dates,
+          tags: jobData.tags,
           employer_id: user.id,
           status: 'open'
-        })
-        .select()
-        .single()
+        },
+        image_urls: jobData.images || []
+      })
 
       if (error) {
         console.error('Error creating job:', error)
@@ -1020,6 +1028,47 @@ export class JobsService {
 
       if (error) {
         console.error('Error marking notification as read:', error)
+        return { success: false, error: error.message }
+      }
+
+      return { success: true, error: null }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      return { success: false, error: "An unexpected error occurred" }
+    }
+  }
+
+  // Get job images
+  static async getJobImages(jobId: string): Promise<{ data: { id: string; image_url: string }[] | null; error: string | null }> {
+    try {
+      const { data, error } = await supabase
+        .from('job_images')
+        .select('id, image_url')
+        .eq('job_id', jobId)
+        .order('created_at', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching job images:', error)
+        return { data: null, error: error.message }
+      }
+
+      return { data, error: null }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      return { data: null, error: "An unexpected error occurred" }
+    }
+  }
+
+  // Delete job image
+  static async deleteJobImage(imageId: string): Promise<{ success: boolean; error: string | null }> {
+    try {
+      const { error } = await supabase
+        .from('job_images')
+        .delete()
+        .eq('id', imageId)
+
+      if (error) {
+        console.error('Error deleting job image:', error)
         return { success: false, error: error.message }
       }
 

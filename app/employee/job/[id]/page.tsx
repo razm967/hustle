@@ -7,13 +7,20 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, DollarSign, MapPin, Clock, Calendar, MessageSquare, Briefcase, Bookmark, BookmarkCheck, Phone, Mail, MessageCircle } from "lucide-react"
+import { ArrowLeft, DollarSign, MapPin, Clock, Calendar, MessageSquare, Briefcase, Bookmark, BookmarkCheck, Phone, Mail, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { JobsService } from "@/lib/jobs-service"
 import type { JobWithStatus } from "@/lib/database-types"
 import { validateEmployeeProfileForApplication } from "@/lib/profile-validation"
 import ProfileCompletionPrompt from "@/components/profile-completion-prompt"
 import JobLocationMap from "@/components/ui/job-location-map"
 import type { ProfileValidationResult } from "@/lib/profile-validation"
+import { supabase } from "@/lib/supabase"
+
+interface JobImage {
+  id: string
+  job_id: string
+  image_url: string
+}
 
 export default function JobDetailsPage() {
   const params = useParams()
@@ -28,6 +35,8 @@ export default function JobDetailsPage() {
   const [saving, setSaving] = useState(false)
   const [profileValidation, setProfileValidation] = useState<ProfileValidationResult | null>(null)
   const [showProfilePrompt, setShowProfilePrompt] = useState(false)
+  const [jobImages, setJobImages] = useState<JobImage[]>([])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   useEffect(() => {
     fetchJobDetails()
@@ -50,6 +59,19 @@ export default function JobDetailsPage() {
       }
 
       setJob(jobData)
+
+      // Fetch job images
+      const { data: images, error: imagesError } = await supabase
+        .from('job_images')
+        .select('*')
+        .eq('job_id', jobId)
+        .order('created_at', { ascending: true })
+
+      if (imagesError) {
+        console.error('Error fetching job images:', imagesError)
+      } else {
+        setJobImages(images || [])
+      }
     } catch (err) {
       console.error('Error fetching job details:', err)
       setError("Failed to load job details")
@@ -160,6 +182,18 @@ export default function JobDetailsPage() {
     window.open(`tel:${job.employer.phone}`, '_self')
   }
 
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => 
+      prev === jobImages.length - 1 ? 0 : prev + 1
+    )
+  }
+
+  const previousImage = () => {
+    setCurrentImageIndex((prev) => 
+      prev === 0 ? jobImages.length - 1 : prev - 1
+    )
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -201,6 +235,48 @@ export default function JobDetailsPage() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Jobs
         </Button>
+
+        {/* Job Images Carousel */}
+        {jobImages.length > 0 && (
+          <Card className="mb-6">
+            <CardContent className="p-0">
+              <div className="relative aspect-video">
+                <img
+                  src={jobImages[currentImageIndex].image_url}
+                  alt={`Job image ${currentImageIndex + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                {jobImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={previousImage}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </button>
+                  </>
+                )}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
+                  {jobImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Job Details Card */}
         <Card className="mb-6">

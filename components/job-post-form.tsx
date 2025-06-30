@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Briefcase, FileText, MapPin } from "lucide-react"
+import { Briefcase, FileText, MapPin, Image as ImageIcon, X, Loader2 } from "lucide-react"
 import PaymentInput from "@/components/ui/payment-input"
 import DateSelection from "@/components/ui/date-selection"
 import DurationInput from "@/components/ui/duration-input"
@@ -17,6 +17,7 @@ import type { Job } from "@/lib/database-types"
 import { validateEmployerProfileForJobPosting } from "@/lib/profile-validation"
 import ProfileCompletionPrompt from "@/components/profile-completion-prompt"
 import type { ProfileValidationResult } from "@/lib/profile-validation"
+import { supabase } from "@/lib/supabase"
 
 interface JobPostFormProps {
   onJobPost?: (job: Job) => void
@@ -33,6 +34,7 @@ interface JobFormData {
   duration: string
   available_dates: string
   tags: string[]
+  images: string[]
 }
 
 export default function JobPostForm({ onJobPost }: JobPostFormProps) {
@@ -45,13 +47,16 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
     pay: "",
     duration: "",
     available_dates: "",
-    tags: []
+    tags: [],
+    images: []
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [profileValidation, setProfileValidation] = useState<ProfileValidationResult | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null)
 
   // Check profile completeness on component mount
   useEffect(() => {
@@ -111,32 +116,45 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
       const { data: newJob, error: jobError } = await JobsService.createJob(jobData)
 
       if (jobError) {
-        setError(jobError)
-        setIsSubmitting(false)
-        return
+        throw jobError
       }
 
-      if (newJob) {
-        // Call the callback if provided
-        if (onJobPost) {
-          onJobPost(newJob)
+      if (newJob && formData.images.length > 0) {
+        // Save job images
+        const { error: imagesError } = await supabase
+          .from('job_images')
+          .insert(
+            formData.images.map(url => ({
+              job_id: newJob.id,
+              image_url: url
+            }))
+          )
+
+        if (imagesError) {
+          throw imagesError
         }
-
-        // Reset form
-        setFormData({
-          title: "",
-          description: "",
-          location: "",
-          latitude: undefined,
-          longitude: undefined,
-          pay: "",
-          duration: "",
-          available_dates: "",
-          tags: []
-        })
-
-        alert("Job posted successfully!")
       }
+
+      // Call the callback if provided
+      if (onJobPost && newJob) {
+        onJobPost(newJob)
+      }
+
+      // Reset form
+      setFormData({
+        title: "",
+        description: "",
+        location: "",
+        latitude: undefined,
+        longitude: undefined,
+        pay: "",
+        duration: "",
+        available_dates: "",
+        tags: [],
+        images: []
+      })
+
+      alert("Job posted successfully!")
     } catch (err) {
       console.error('Error posting job:', err)
       setError("An unexpected error occurred. Please try again.")
@@ -178,6 +196,62 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
       ...formData,
       tags
     })
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setUploadingImages(true)
+    setImageUploadError(null)
+    const newImages: string[] = []
+
+    try {
+      for (const file of files) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          throw new Error('Please upload only image files')
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error('Image size must be less than 5MB')
+        }
+
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+        const filePath = `${fileName}`
+
+        const { error: uploadError, data } = await supabase.storage
+          .from('job-images')
+          .upload(filePath, file)
+
+        if (uploadError) throw uploadError
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('job-images')
+          .getPublicUrl(filePath)
+
+        newImages.push(publicUrl)
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...newImages]
+      }))
+    } catch (error: any) {
+      console.error('Error uploading images:', error)
+      setImageUploadError(error.message || 'Error uploading images')
+    } finally {
+      setUploadingImages(false)
+    }
+  }
+
+  const removeImage = (indexToRemove: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, index) => index !== indexToRemove)
+    }))
   }
 
   // Show loading skeleton while checking profile
@@ -235,7 +309,7 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded">
@@ -321,6 +395,64 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
             onChange={handleTagsChange}
             disabled={isSubmitting}
           />
+
+          {/* Image Upload Section */}
+          <div className="space-y-2">
+            <Label htmlFor="images" className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              Job Images
+            </Label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {formData.images.map((url, index) => (
+                <div key={url} className="relative group aspect-video">
+                  <img
+                    src={url}
+                    alt={`Job image ${index + 1}`}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              <label
+                htmlFor="image-upload"
+                className={`aspect-video flex items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:border-blue-500 transition-colors ${
+                  uploadingImages ? 'bg-gray-50' : ''
+                }`}
+              >
+                {uploadingImages ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                ) : (
+                  <div className="text-center">
+                    <ImageIcon className="h-6 w-6 mx-auto text-gray-400" />
+                    <span className="mt-2 block text-sm text-gray-500">
+                      Add Images
+                    </span>
+                  </div>
+                )}
+              </label>
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+                disabled={uploadingImages}
+              />
+            </div>
+            {imageUploadError && (
+              <p className="text-sm text-red-600">{imageUploadError}</p>
+            )}
+            <p className="text-sm text-gray-500">
+              Upload up to 4 images (max 5MB each). Supported formats: PNG, JPG, JPEG, GIF, WEBP
+            </p>
+          </div>
 
           {/* Submit Button */}
           <Button type="submit" className="w-full" disabled={isSubmitting}>
