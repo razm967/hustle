@@ -73,7 +73,25 @@ export default function SavedJobsPage() {
             <CardTitle className="text-lg text-green-600 dark:text-green-400 flex items-center gap-2">
               {job.title}
               {/* Status Badges */}
-              {job.application_status === 'applied' && job.application_result && (
+              {job.status === 'completed' ? (
+                <>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Job Completed
+                  </Badge>
+                  {job.is_rated && (
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">
+                      <Star className="h-3 w-3 mr-1" />
+                      Rated
+                    </Badge>
+                  )}
+                </>
+              ) : job.status === 'in_progress' ? (
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs">
+                  <ClockIcon className="h-3 w-3 mr-1" />
+                  In Progress
+                </Badge>
+              ) : job.application_status === 'applied' && job.application_result && (
                 <>
                   {job.application_result === 'pending' && (
                     <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
@@ -94,26 +112,6 @@ export default function SavedJobsPage() {
                     </Badge>
                   )}
                 </>
-              )}
-              {job.status === 'completed' && (
-                <>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Job Completed
-                  </Badge>
-                  {job.is_rated && (
-                    <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">
-                      <Star className="h-3 w-3 mr-1" />
-                      Rated
-                    </Badge>
-                  )}
-                </>
-              )}
-              {job.status === 'in_progress' && (
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs">
-                  <ClockIcon className="h-3 w-3 mr-1" />
-                  In Progress
-                </Badge>
               )}
             </CardTitle>
             <CardDescription className="mt-1">

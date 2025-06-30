@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, DollarSign, MapPin, Clock, Calendar, MessageSquare, Briefcase, Bookmark, BookmarkCheck, Phone, Mail, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowLeft, DollarSign, MapPin, Clock, Calendar, MessageSquare, Briefcase, Bookmark, BookmarkCheck, Phone, Mail, MessageCircle, ChevronLeft, ChevronRight, CheckCircle, Star } from "lucide-react"
 import { JobsService } from "@/lib/jobs-service"
 import type { JobWithStatus } from "@/lib/database-types"
 import { validateEmployeeProfileForApplication } from "@/lib/profile-validation"
@@ -286,8 +286,26 @@ export default function JobDetailsPage() {
                 <CardTitle className="text-2xl text-green-600 dark:text-green-400 mb-2 flex items-center gap-2">
                   <Briefcase className="h-6 w-6" />
                   {job.title}
-                  {/* Application Status Badge */}
-                  {job.application_status === 'applied' && (
+                  {/* Status Badges */}
+                  {job.status === 'completed' ? (
+                    <>
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-sm">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Job Completed
+                      </Badge>
+                      {job.is_rated && (
+                        <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-sm">
+                          <Star className="h-3 w-3 mr-1" />
+                          Rated
+                        </Badge>
+                      )}
+                    </>
+                  ) : job.status === 'in_progress' ? (
+                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-sm">
+                      <Clock className="h-3 w-3 mr-1" />
+                      In Progress
+                    </Badge>
+                  ) : job.application_status === 'applied' && (
                     <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-sm">
                       Applied
                     </Badge>
@@ -298,9 +316,12 @@ export default function JobDetailsPage() {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                  {job.status}
-                </Badge>
+                {/* Only show status badge if not completed or in progress */}
+                {!['completed', 'in_progress'].includes(job.status) && (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    {job.status}
+                  </Badge>
+                )}
                 {/* Save/Unsave Button */}
                 <Button
                   type="button"
