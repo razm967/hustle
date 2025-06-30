@@ -106,17 +106,17 @@ export default function Header({
           {/* Left side - Profile Picture Button */}
           <div className="flex items-center">
             <Link href={userType === 'employer' ? '/employer/profile' : userType === 'employee' ? '/employee/profile' : '/'}>
-              <Button variant="ghost" size="sm" className="p-0 h-auto hover:opacity-80 transition-opacity">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
-                  <AvatarFallback className="bg-blue-600 text-white">
+              <Button variant="ghost" size="sm" className="p-2 h-auto hover:opacity-80 transition-opacity flex items-center justify-center">
+                <Avatar className="h-14 w-14">
+                  <AvatarImage src={userProfile?.avatar_url || ''} alt="Profile" className="object-cover" />
+                  <AvatarFallback className={`${userType === 'employer' ? 'bg-purple-600' : userType === 'employee' ? 'bg-green-600' : 'bg-blue-600'} text-white flex items-center justify-center text-lg`}>
                     {userInitials || (userType === 'employer' ? 'EM' : userType === 'employee' ? 'EE' : 'HU')}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </Link>
-            <div className="ml-3 hidden sm:block">
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <div className="ml-4">
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
                 {title}
               </h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">

@@ -11,6 +11,7 @@ export interface UserProfile {
   latitude?: number
   longitude?: number
   bio?: string
+  avatar_url?: string
   // Employee-specific fields
   availability?: string
   // Employer-specific fields
@@ -61,4 +62,9 @@ export interface JobWithStatus extends Job {
   application_status?: 'applied' | 'saved' | null
   application_result?: 'pending' | 'accepted' | 'rejected'
   is_saved?: boolean
+  // Employer information for display purposes
+  employer_name?: string
+  employer_email?: string
+  // Rating status
+  is_rated?: boolean
 } 

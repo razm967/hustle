@@ -273,14 +273,14 @@ export default function Sidebar({
               onClick={() => setIsMobileMenuOpen(false)}
               className="hover:opacity-80 transition-opacity"
             >
-              <Avatar className="h-8 w-8 cursor-pointer">
-                <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
-                <AvatarFallback className={`${theme.avatarBg} text-white text-sm`}>
-                  {userType === 'guest' ? <User className="h-4 w-4" /> : (userInitials || theme.avatarFallback)}
+              <Avatar className="h-12 w-12 cursor-pointer">
+                <AvatarImage src={userProfile?.avatar_url || ''} alt="Profile" />
+                <AvatarFallback className={`${theme.avatarBg} text-white`}>
+                  {userType === 'guest' ? <User className="h-6 w-6" /> : (userInitials || theme.avatarFallback)}
                 </AvatarFallback>
               </Avatar>
             </Link>
-            <div className="ml-3">
+            <div className="ml-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {theme.title}
               </h2>

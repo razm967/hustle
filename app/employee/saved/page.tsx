@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, BookmarkCheck, CheckCircle, Clock as ClockIcon, XCircle, Filter } from "lucide-react"
+import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, BookmarkCheck, CheckCircle, Clock as ClockIcon, XCircle, Filter, Briefcase, Star } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { JobsService } from "@/lib/jobs-service"
 import type { JobWithStatus } from "@/lib/database-types"
@@ -96,12 +96,20 @@ export default function SavedJobsPage() {
                 </>
               )}
               {job.status === 'completed' && (
-                <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Job Completed
-                </Badge>
+                <>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Job Completed
+                  </Badge>
+                  {job.is_rated && (
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">
+                      <Star className="h-3 w-3 mr-1" />
+                      Rated
+                    </Badge>
+                  )}
+                </>
               )}
-              {job.status === 'in_progress' && job.application_result === 'accepted' && (
+              {job.status === 'in_progress' && (
                 <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs">
                   <ClockIcon className="h-3 w-3 mr-1" />
                   In Progress
@@ -141,6 +149,14 @@ export default function SavedJobsPage() {
             <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
             <span className="font-medium">{job.pay}</span>
           </div>
+          
+          {/* Employer Information */}
+          {job.employer_name && (
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              <span>{job.employer_name}</span>
+            </div>
+          )}
           
           {job.location && (
             <div className="flex items-center gap-2">
@@ -209,6 +225,12 @@ export default function SavedJobsPage() {
     </div>
   )
 
+  // Count applications by status
+  const pendingCount = appliedJobs.filter(job => job.application_result === 'pending').length
+  const acceptedCount = appliedJobs.filter(job => job.application_result === 'accepted').length
+  const rejectedCount = appliedJobs.filter(job => job.application_result === 'rejected').length
+  const ratedCount = appliedJobs.filter(job => job.is_rated).length
+
   // Filter applied jobs by application status
   const getFilteredAppliedJobs = () => {
     switch (applicationFilter) {
@@ -216,17 +238,14 @@ export default function SavedJobsPage() {
         return appliedJobs.filter(job => job.application_result === 'accepted')
       case "rejected":
         return appliedJobs.filter(job => job.application_result === 'rejected')
+      case "rated":
+        return appliedJobs.filter(job => job.is_rated)
       default:
         return appliedJobs
     }
   }
 
   const filteredAppliedJobs = getFilteredAppliedJobs()
-
-  // Count applications by status
-  const pendingCount = appliedJobs.filter(job => job.application_result === 'pending').length
-  const acceptedCount = appliedJobs.filter(job => job.application_result === 'accepted').length
-  const rejectedCount = appliedJobs.filter(job => job.application_result === 'rejected').length
 
   if (loading) {
     return (
@@ -307,6 +326,12 @@ export default function SavedJobsPage() {
                         Rejected ({rejectedCount})
                       </div>
                     </SelectItem>
+                    <SelectItem value="rated">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-purple-500" />
+                        Rated ({ratedCount})
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -338,10 +363,12 @@ export default function SavedJobsPage() {
               renderEmptyState(
                 applicationFilter === "all" ? "No Applications Yet" : 
                 applicationFilter === "accepted" ? "No Accepted Applications" :
-                "No Rejected Applications",
+                applicationFilter === "rejected" ? "No Rejected Applications" :
+                "No Rated Jobs",
                 applicationFilter === "all" ? "Jobs you've applied to will appear here. Start applying to opportunities!" :
                 applicationFilter === "accepted" ? "Applications that have been accepted will appear here." :
-                "Applications that have been rejected will appear here."
+                applicationFilter === "rejected" ? "Applications that have been rejected will appear here." :
+                "Jobs that you've rated will appear here."
               )
             ) : (
               <div className="grid gap-4">

@@ -314,26 +314,52 @@ export class JobsService {
         return { data: null, error: jobsError.message }
       }
 
-      // Get user's saved jobs to check status
-      const { data: savedJobs } = await supabase
-        .from('saved_jobs')
-        .select('job_id')
-        .eq('employee_id', user.id)
+      // Get employer details for the jobs
+      const employerIds = jobs?.map(job => job.employer_id) || []
+      const { data: employers, error: employersError } = await supabase
+        .from('user_profiles')
+        .select('id, full_name, company_name, email')
+        .in('id', employerIds)
 
-      const savedJobIds = new Set(savedJobs?.map(saved => saved.job_id) || [])
+      if (employersError) {
+        console.error('Error fetching employer details for applied jobs:', employersError)
+        // Continue without employer data if there's an error
+      }
 
-      // Create a map of job applications for easy lookup
+      // Get user's saved jobs and ratings to check status
+      const [savedJobsResult, ratingsResult] = await Promise.all([
+        supabase
+          .from('saved_jobs')
+          .select('job_id')
+          .eq('employee_id', user.id),
+        supabase
+          .from('employee_ratings')
+          .select('job_id')
+          .eq('employee_id', user.id)
+      ])
+
+      const savedJobIds = new Set(savedJobsResult.data?.map(saved => saved.job_id) || [])
+      const ratedJobIds = new Set(ratingsResult.data?.map(rating => rating.job_id) || [])
+
+      // Create maps for easy lookup
       const applicationsMap = new Map(applications.map(app => [app.job_id, app]))
+      const employersMap = new Map(employers?.map(emp => [emp.id, emp]) || [])
 
       // Transform the data to match JobWithStatus interface
       const jobsWithStatus: JobWithStatus[] = (jobs || [])
         .map(job => {
           const application = applicationsMap.get(job.id)
+          const employer = employersMap.get(job.employer_id)
+          
           return {
             ...job,
             application_status: 'applied' as const,
             application_result: application?.status || 'pending', // Add application result status
-            is_saved: savedJobIds.has(job.id)
+            is_saved: savedJobIds.has(job.id),
+            is_rated: ratedJobIds.has(job.id),
+            // Add employer information to the job object for consistency with notifications
+            employer_name: employer?.full_name || employer?.company_name || 'Unknown Employer',
+            employer_email: employer?.email || 'Unknown Email'
           }
         })
 
@@ -653,14 +679,15 @@ export class JobsService {
       job_id: string
       status: 'accepted' | 'rejected'
       updated_at: string
-      job: {
-        id: string
-        title: string
-        description: string
-        location?: string
-        pay: string
-        employer_id: string
-      }
+              job: {
+          id: string
+          title: string
+          description: string
+          location?: string
+          pay: string
+          employer_id: string
+          status: string
+        }
       employer: {
         full_name?: string
         company_name?: string
@@ -697,13 +724,21 @@ export class JobsService {
         return { data: [], error: null }
       }
 
-      // Get job details
+      // Get job details and ratings
       const jobIds = applications.map(app => app.job_id)
-      const { data: jobs, error: jobsError } = await supabase
-        .from('jobs')
-        .select('id, title, description, location, pay, employer_id')
-        .in('id', jobIds)
+      const [jobsResult, ratingsResult] = await Promise.all([
+        supabase
+          .from('jobs')
+          .select('id, title, description, location, pay, employer_id, status')
+          .in('id', jobIds),
+        supabase
+          .from('employee_ratings')
+          .select('job_id')
+          .eq('employee_id', user.id)
+          .in('job_id', jobIds)
+      ])
 
+      const { data: jobs, error: jobsError } = jobsResult
       if (jobsError) {
         console.error('Error fetching job details for notifications:', jobsError)
         return { data: null, error: jobsError.message }
@@ -715,6 +750,9 @@ export class JobsService {
         .from('user_profiles')
         .select('id, full_name, company_name, email')
         .in('id', employerIds)
+
+      // Create a set of rated job IDs
+      const ratedJobIds = new Set(ratingsResult.data?.map(r => r.job_id) || [])
 
       if (employersError) {
         console.error('Error fetching employer details for notifications:', employersError)
@@ -736,18 +774,259 @@ export class JobsService {
             title: 'Unknown Job',
             description: '',
             pay: '',
-            employer_id: ''
+            employer_id: '',
+            status: 'unknown',
+            is_rated: false
           },
           employer: employer || {
             email: 'Unknown Employer'
-          }
+          },
+          is_rated: job ? ratedJobIds.has(job.id) : false
         }
       })
 
-      return { data: notifications, error: null }
+      // Filter out notifications for completed jobs if the application was accepted
+      const activeNotifications = notifications.filter(notification => 
+        !(notification.status === 'accepted' && notification.job.status === 'completed')
+      )
+
+      return { data: activeNotifications, error: null }
     } catch (err) {
       console.error('Unexpected error:', err)
       return { data: null, error: "An unexpected error occurred" }
+    }
+  }
+
+  // Complete a job (employee marks job as completed)
+  static async completeJob(jobId: string): Promise<{ success: boolean; error: string | null }> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !user) {
+        return { success: false, error: "User not authenticated" }
+      }
+
+      // Update job status to completed
+      const { error: jobUpdateError } = await supabase
+        .from('jobs')
+        .update({ 
+          status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', jobId)
+
+      if (jobUpdateError) {
+        console.error('Error completing job:', jobUpdateError)
+        return { success: false, error: jobUpdateError.message }
+      }
+
+      // Get job details for notification
+      const { data: job, error: jobError } = await supabase
+        .from('jobs')
+        .select('employer_id, title')
+        .eq('id', jobId)
+        .single()
+
+      if (!jobError && job) {
+        // Create notification for employer
+        await supabase
+          .from('employer_notifications')
+          .insert({
+            employer_id: job.employer_id,
+            job_id: jobId,
+            employee_id: user.id,
+            type: 'job_completed',
+            message: `Job "${job.title}" has been completed. Please rate the employee.`
+          })
+      }
+
+      return { success: true, error: null }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      return { success: false, error: "An unexpected error occurred" }
+    }
+  }
+
+  // Submit employee rating
+  static async submitEmployeeRating(jobId: string, employeeId: string, ratings: {
+    work_quality: number;
+    availability: number;
+    friendliness: number;
+  }): Promise<{ success: boolean; error: string | null }> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !user) {
+        return { success: false, error: "User not authenticated" }
+      }
+
+      // Check if rating already exists
+      const { data: existingRating } = await supabase
+        .from('employee_ratings')
+        .select('id')
+        .eq('job_id', jobId)
+        .eq('employer_id', user.id)
+        .eq('employee_id', employeeId)
+        .single()
+
+      if (existingRating) {
+        return { success: false, error: "Rating already submitted for this job" }
+      }
+
+      const { error } = await supabase
+        .from('employee_ratings')
+        .insert({
+          job_id: jobId,
+          employer_id: user.id,
+          employee_id: employeeId,
+          work_quality: ratings.work_quality,
+          availability: ratings.availability,
+          friendliness: ratings.friendliness
+        })
+
+      if (error) {
+        console.error('Error submitting rating:', error)
+        return { success: false, error: error.message }
+      }
+
+      return { success: true, error: null }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      return { success: false, error: "An unexpected error occurred" }
+    }
+  }
+
+  // Get employee average ratings
+  static async getEmployeeRatings(employeeId: string): Promise<{ 
+    data: {
+      work_quality: number;
+      availability: number;
+      friendliness: number;
+      total_ratings: number;
+    } | null; 
+    error: string | null 
+  }> {
+    try {
+      const { data: ratings, error } = await supabase
+        .from('employee_ratings')
+        .select('work_quality, availability, friendliness')
+        .eq('employee_id', employeeId)
+
+      if (error) {
+        console.error('Error fetching employee ratings:', error)
+        return { data: null, error: error.message }
+      }
+
+      if (!ratings || ratings.length === 0) {
+        return { 
+          data: { work_quality: 0, availability: 0, friendliness: 0, total_ratings: 0 }, 
+          error: null 
+        }
+      }
+
+      const averages = {
+        work_quality: ratings.reduce((sum, r) => sum + r.work_quality, 0) / ratings.length,
+        availability: ratings.reduce((sum, r) => sum + r.availability, 0) / ratings.length,
+        friendliness: ratings.reduce((sum, r) => sum + r.friendliness, 0) / ratings.length,
+        total_ratings: ratings.length
+      }
+
+      return { data: averages, error: null }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      return { data: null, error: "An unexpected error occurred" }
+    }
+  }
+
+  // Get employer notifications
+  static async getEmployerNotifications(): Promise<{ 
+    data: Array<{
+      id: string;
+      job_id: string;
+      employee_id: string;
+      type: string;
+      message: string;
+      is_read: boolean;
+      created_at: string;
+      job?: { title: string };
+      employee?: { full_name: string; email: string };
+    }> | null; 
+    error: string | null 
+  }> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !user) {
+        return { data: null, error: "User not authenticated" }
+      }
+
+      // Get notifications that haven't been read AND don't have ratings yet
+      const { data: notifications, error } = await supabase
+        .from('employer_notifications')
+        .select('*')
+        .eq('employer_id', user.id)
+        .eq('is_read', false)
+        .eq('type', 'job_completed')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching employer notifications:', error)
+        return { data: null, error: error.message }
+      }
+
+      // Get job and employee details, and filter out already rated jobs
+      if (notifications && notifications.length > 0) {
+        const jobIds = notifications.map(n => n.job_id)
+        const employeeIds = notifications.map(n => n.employee_id)
+
+        const [jobsResult, employeesResult, ratingsResult] = await Promise.all([
+          supabase.from('jobs').select('id, title').in('id', jobIds),
+          supabase.from('user_profiles').select('id, full_name, email').in('id', employeeIds),
+          supabase.from('employee_ratings').select('job_id, employee_id').eq('employer_id', user.id).in('job_id', jobIds)
+        ])
+
+        const jobsMap = new Map(jobsResult.data?.map(j => [j.id, j]) || [])
+        const employeesMap = new Map(employeesResult.data?.map(e => [e.id, e]) || [])
+        const ratedJobs = new Set(ratingsResult.data?.map(r => `${r.job_id}-${r.employee_id}`) || [])
+
+        // Filter out notifications for jobs that already have ratings
+        const unratedNotifications = notifications.filter(n => 
+          !ratedJobs.has(`${n.job_id}-${n.employee_id}`)
+        )
+
+        const enrichedNotifications = unratedNotifications.map(n => ({
+          ...n,
+          job: jobsMap.get(n.job_id),
+          employee: employeesMap.get(n.employee_id)
+        }))
+
+        return { data: enrichedNotifications, error: null }
+      }
+
+      return { data: notifications || [], error: null }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      return { data: null, error: "An unexpected error occurred" }
+    }
+  }
+
+  // Mark notification as read
+  static async markNotificationAsRead(notificationId: string): Promise<{ success: boolean; error: string | null }> {
+    try {
+      const { error } = await supabase
+        .from('employer_notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId)
+
+      if (error) {
+        console.error('Error marking notification as read:', error)
+        return { success: false, error: error.message }
+      }
+
+      return { success: true, error: null }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      return { success: false, error: "An unexpected error occurred" }
     }
   }
 } 

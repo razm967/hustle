@@ -16,6 +16,7 @@ import { Loader2, Building, Mail, Phone, Globe, Save, Calendar } from 'lucide-re
 import { supabase } from '@/lib/supabase'
 import { getCurrentUserProfile, getUserInitials } from '@/lib/user-utils'
 import type { UserProfile } from '@/lib/database-types'
+import { AvatarUpload } from '@/components/ui/avatar-upload'
 
 // Profile form schema
 const profileSchema = z.object({
@@ -125,6 +126,39 @@ export default function EmployerProfilePage() {
     }
   }
 
+  const handleAvatarChange = async (url: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        setMessage('You must be logged in to update your profile')
+        return
+      }
+
+      // Update profile in database
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          avatar_url: url,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+
+      if (error) {
+        setMessage(error.message)
+        setIsSuccess(false)
+      } else {
+        setMessage('Profile picture updated successfully!')
+        setIsSuccess(true)
+        // Reload profile data
+        await loadUserProfile()
+      }
+    } catch (error) {
+      setMessage('An unexpected error occurred while updating profile picture.')
+      setIsSuccess(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="employer-content p-6">
@@ -142,12 +176,13 @@ export default function EmployerProfilePage() {
         <Card>
           <CardHeader>
             <div className="flex items-center space-x-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
-                <AvatarFallback className="bg-purple-600 text-white text-lg">
-                  {userInitials}
-                </AvatarFallback>
-              </Avatar>
+              <AvatarUpload
+                userId={userProfile?.id || ''}
+                currentAvatarUrl={userProfile?.avatar_url}
+                userInitials={userInitials}
+                onAvatarChange={handleAvatarChange}
+                className="h-16 w-16"
+              />
               <div>
                 <CardTitle className="text-2xl">My Profile</CardTitle>
                 <CardDescription>
