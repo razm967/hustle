@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, BookmarkCheck, CheckCircle, Clock as ClockIcon, XCircle, Filter, Briefcase, Star } from "lucide-react"
+import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, BookmarkCheck, CheckCircle, Clock as ClockIcon, XCircle, Filter, Briefcase, Star, Timer, CheckSquare, CircleDot, Award } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { JobsService } from "@/lib/jobs-service"
 import type { JobWithStatus } from "@/lib/database-types"
@@ -75,33 +75,28 @@ export default function SavedJobsPage() {
               {/* Status Badges */}
               {job.status === 'completed' ? (
                 <>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
-                    <CheckCircle className="h-3 w-3 mr-1" />
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                    <Award className="h-3 w-3 mr-1" />
                     Job Completed
                   </Badge>
                   {job.is_rated && (
-                    <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">
+                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs">
                       <Star className="h-3 w-3 mr-1" />
                       Rated
                     </Badge>
                   )}
                 </>
-              ) : job.status === 'in_progress' ? (
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs">
-                  <ClockIcon className="h-3 w-3 mr-1" />
-                  In Progress
-                </Badge>
               ) : job.application_status === 'applied' && job.application_result && (
                 <>
                   {job.application_result === 'pending' && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-                      <ClockIcon className="h-3 w-3 mr-1" />
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">
+                      <Timer className="h-3 w-3 mr-1" />
                       Pending
                     </Badge>
                   )}
-                  {job.application_result === 'accepted' && (
+                  {(job.application_result === 'accepted' || job.status === 'in_progress') && (
                     <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
-                      <CheckCircle className="h-3 w-3 mr-1" />
+                      <CheckSquare className="h-3 w-3 mr-1" />
                       Accepted
                     </Badge>
                   )}
@@ -225,17 +220,22 @@ export default function SavedJobsPage() {
 
   // Count applications by status
   const pendingCount = appliedJobs.filter(job => job.application_result === 'pending').length
-  const acceptedCount = appliedJobs.filter(job => job.application_result === 'accepted').length
+  const acceptedCount = appliedJobs.filter(job => job.application_result === 'accepted' || job.status === 'in_progress').length
   const rejectedCount = appliedJobs.filter(job => job.application_result === 'rejected').length
+  const completedCount = appliedJobs.filter(job => job.status === 'completed').length
   const ratedCount = appliedJobs.filter(job => job.is_rated).length
 
   // Filter applied jobs by application status
   const getFilteredAppliedJobs = () => {
     switch (applicationFilter) {
+      case "pending":
+        return appliedJobs.filter(job => job.application_result === 'pending')
       case "accepted":
-        return appliedJobs.filter(job => job.application_result === 'accepted')
+        return appliedJobs.filter(job => job.application_result === 'accepted' || job.status === 'in_progress')
       case "rejected":
         return appliedJobs.filter(job => job.application_result === 'rejected')
+      case "completed":
+        return appliedJobs.filter(job => job.status === 'completed')
       case "rated":
         return appliedJobs.filter(job => job.is_rated)
       default:
@@ -299,9 +299,38 @@ export default function SavedJobsPage() {
         <TabsContent value="applied" className="mt-6">
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                My Applications ({appliedJobs.length})
-              </h2>
+              <div className="flex items-center gap-4">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  My Applications
+                </h2>
+                {/* Compact Stats */}
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <Badge variant="outline" className="bg-gray-100">
+                    <CircleDot className="h-3 w-3 mr-1" />
+                    <span className="font-semibold">{appliedJobs.length}</span> Total
+                  </Badge>
+                  <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                    <Timer className="h-3 w-3 mr-1" />
+                    <span className="font-semibold">{pendingCount}</span> Pending
+                  </Badge>
+                  <Badge variant="outline" className="bg-green-50 text-green-700">
+                    <CheckSquare className="h-3 w-3 mr-1" />
+                    <span className="font-semibold">{acceptedCount}</span> Accepted
+                  </Badge>
+                  <Badge variant="outline" className="bg-red-50 text-red-700">
+                    <XCircle className="h-3 w-3 mr-1" />
+                    <span className="font-semibold">{rejectedCount}</span> Rejected
+                  </Badge>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                    <Award className="h-3 w-3 mr-1" />
+                    <span className="font-semibold">{completedCount}</span> Completed
+                  </Badge>
+                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                    <Star className="h-3 w-3 mr-1" />
+                    <span className="font-semibold">{ratedCount}</span> Rated
+                  </Badge>
+                </div>
+              </div>
               
               {/* Application Status Filter */}
               <div className="flex items-center gap-2">
@@ -311,10 +340,21 @@ export default function SavedJobsPage() {
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Applications ({appliedJobs.length})</SelectItem>
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <CircleDot className="h-4 w-4" />
+                        All Applications ({appliedJobs.length})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="pending">
+                      <div className="flex items-center gap-2">
+                        <Timer className="h-4 w-4 text-purple-500" />
+                        Pending ({pendingCount})
+                      </div>
+                    </SelectItem>
                     <SelectItem value="accepted">
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <CheckSquare className="h-4 w-4 text-green-500" />
                         Accepted ({acceptedCount})
                       </div>
                     </SelectItem>
@@ -324,9 +364,15 @@ export default function SavedJobsPage() {
                         Rejected ({rejectedCount})
                       </div>
                     </SelectItem>
+                    <SelectItem value="completed">
+                      <div className="flex items-center gap-2">
+                        <Award className="h-4 w-4 text-blue-500" />
+                        Completed ({completedCount})
+                      </div>
+                    </SelectItem>
                     <SelectItem value="rated">
                       <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4 text-purple-500" />
+                        <Star className="h-4 w-4 text-yellow-500" />
                         Rated ({ratedCount})
                       </div>
                     </SelectItem>
@@ -335,35 +381,16 @@ export default function SavedJobsPage() {
               </div>
             </div>
 
-            {/* Application Status Summary */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <Card className="text-center">
-                <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{appliedJobs.length}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Total Applications</div>
-                </CardContent>
-              </Card>
-              <Card className="text-center">
-                <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{acceptedCount}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Accepted</div>
-                </CardContent>
-              </Card>
-              <Card className="text-center">
-                <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">{rejectedCount}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Rejected</div>
-                </CardContent>
-              </Card>
-            </div>
-
+            {/* Job Cards */}
             {filteredAppliedJobs.length === 0 ? (
               renderEmptyState(
                 applicationFilter === "all" ? "No Applications Yet" : 
+                applicationFilter === "pending" ? "No Pending Applications" :
                 applicationFilter === "accepted" ? "No Accepted Applications" :
                 applicationFilter === "rejected" ? "No Rejected Applications" :
                 "No Rated Jobs",
                 applicationFilter === "all" ? "Jobs you've applied to will appear here. Start applying to opportunities!" :
+                applicationFilter === "pending" ? "Applications that are pending review will appear here." :
                 applicationFilter === "accepted" ? "Applications that have been accepted will appear here." :
                 applicationFilter === "rejected" ? "Applications that have been rejected will appear here." :
                 "Jobs that you've rated will appear here."

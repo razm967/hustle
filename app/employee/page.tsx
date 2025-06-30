@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { CheckCircle, XCircle, Bell, Briefcase, MapPin, Calendar, Clock, CheckCheck, Star } from "lucide-react"
+import { CheckCircle, XCircle, Bell, Briefcase, MapPin, Calendar, Clock, CheckCheck, Star, Timer, Award, CheckSquare } from "lucide-react"
 import { JobsService } from "@/lib/jobs-service"
 import { supabase } from "@/lib/supabase"
 
@@ -109,12 +109,12 @@ export default function EmployeeDashboard() {
     if (job.status === 'completed') {
       return (
         <>
-          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-            <CheckCircle className="h-3 w-3 mr-1" />
+          <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+            <Award className="h-3 w-3 mr-1" />
             Job Completed
           </Badge>
           {job.is_rated && (
-            <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+            <Badge variant="secondary">
               <Star className="h-3 w-3 mr-1" />
               Rated
             </Badge>
@@ -126,7 +126,7 @@ export default function EmployeeDashboard() {
     // Show in progress status
     if (job.status === 'in_progress') {
       return (
-        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+        <Badge variant="secondary">
           <Clock className="h-3 w-3 mr-1" />
           In Progress
         </Badge>
@@ -137,20 +137,25 @@ export default function EmployeeDashboard() {
     switch (status) {
       case 'accepted':
         return (
-          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-            <CheckCircle className="h-3 w-3 mr-1" />
+          <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+            <CheckSquare className="h-3 w-3 mr-1" />
             Accepted
           </Badge>
         )
       case 'rejected':
         return (
-          <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+          <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
             <XCircle className="h-3 w-3 mr-1" />
             Rejected
           </Badge>
         )
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return (
+          <Badge variant="secondary">
+            <Timer className="h-3 w-3 mr-1" />
+            {status}
+          </Badge>
+        )
     }
   }
 
@@ -367,46 +372,6 @@ export default function EmployeeDashboard() {
               </Link>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Quick Stats Section */}
-        <div className="mt-16 max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-            Quick Overview
-          </h2>
-          <div className="grid md:grid-cols-4 gap-6">
-            <Card className="text-center">
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {notifications.filter(n => n.status === 'accepted').length}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Applications Accepted</div>
-              </CardContent>
-            </Card>
-            
-            <Card className="text-center">
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                  {notifications.length}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Recent Updates</div>
-              </CardContent>
-            </Card>
-            
-            <Card className="text-center">
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">0</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Jobs Completed</div>
-              </CardContent>
-            </Card>
-            
-            <Card className="text-center">
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">⭐ 0</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Average Rating</div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle, XCircle, Clock, User, Mail, Phone, MapPin, MessageSquare, Briefcase, Calendar } from "lucide-react"
+import { CheckCircle, XCircle, Clock, User, Mail, Phone, MapPin, MessageSquare, Briefcase, Calendar, Timer, CheckSquare } from "lucide-react"
 import { JobsService } from "@/lib/jobs-service"
 import { getUserInitials } from "@/lib/user-utils"
 
@@ -145,11 +145,11 @@ export default function EmployerApplicationsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"><Clock className="h-3 w-3 mr-1" />Pending</Badge>
+        return <Badge variant="secondary" className="text-xs"><Timer className="h-3 w-3 mr-1" />Pending</Badge>
       case 'accepted':
-        return <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="h-3 w-3 mr-1" />Accepted</Badge>
+        return <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs"><CheckSquare className="h-3 w-3 mr-1" />Accepted</Badge>
       case 'rejected':
-        return <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>
+        return <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-xs"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }

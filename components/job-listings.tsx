@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, BookmarkCheck } from "lucide-react"
+import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, BookmarkCheck, Timer } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { JobsService } from "@/lib/jobs-service"
 import type { JobWithStatus } from "@/lib/database-types"
@@ -74,7 +74,8 @@ export default function JobListings({ jobs, onJobSaved }: JobListingsProps) {
                     {job.title}
                     {/* Application Status Badge */}
                     {job.application_status === 'applied' && (
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                      <Badge variant="secondary" className="text-xs">
+                        <Timer className="h-3 w-3 mr-1" />
                         Applied
                       </Badge>
                     )}
@@ -90,7 +91,7 @@ export default function JobListings({ jobs, onJobSaved }: JobListingsProps) {
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                  <Badge variant="secondary" className="text-xs">
                     {job.status}
                   </Badge>
                   {/* Save/Unsave Button */}

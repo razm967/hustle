@@ -15,7 +15,7 @@ import { Loader2, Mail, Briefcase, Users } from 'lucide-react'
 
 const signupSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   role: z.enum(['employer', 'employee'], {

@@ -196,30 +196,6 @@ export default function EmployerDashboard() {
           </div>
         </div>
 
-        {/* Quick Stats Section */}
-        <div className="mt-16 max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-            Quick Overview
-          </h2>
-          <div className="grid md:grid-cols-4 gap-6">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow text-center">
-              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">0</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Active Jobs</div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow text-center">
-              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">0</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Applications</div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow text-center">
-              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">0</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Completed Jobs</div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow text-center">
-              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">$0</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Total Spent</div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Employee Rating Dialog */}
