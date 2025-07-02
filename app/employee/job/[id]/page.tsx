@@ -15,6 +15,7 @@ import ProfileCompletionPrompt from "@/components/profile-completion-prompt"
 import JobLocationMap from "@/components/ui/job-location-map"
 import type { ProfileValidationResult } from "@/lib/profile-validation"
 import { supabase } from "@/lib/supabase"
+import { useFeedback } from "@/components/ui/feedback"
 
 interface JobImage {
   id: string
@@ -26,6 +27,7 @@ export default function JobDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const jobId = params.id as string
+  const { showSuccess, showError, showWarning } = useFeedback()
 
   const [job, setJob] = useState<JobWithStatus & { employer?: { full_name?: string; email: string; phone?: string; company_name?: string } } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -96,14 +98,14 @@ export default function JobDetailsPage() {
       const { success, error: applyError } = await JobsService.applyForJob(job.id, message)
       
       if (success) {
-        alert("Application submitted successfully!")
+        showSuccess("Application submitted successfully!", "Success")
         router.push("/employee/browse-jobs")
       } else {
-        alert(`Failed to apply: ${applyError}`)
+        showError(`Failed to apply: ${applyError}`, "Application Failed")
       }
     } catch (err) {
       console.error('Error applying for job:', err)
-      alert("An unexpected error occurred. Please try again.")
+      showError("An unexpected error occurred. Please try again.", "Error")
     } finally {
       setApplying(false)
     }
@@ -119,17 +121,21 @@ export default function JobDetailsPage() {
 
     setSaving(true)
     try {
-      if (job.is_saved) {
+      const wasSaved = job.is_saved
+      
+      if (wasSaved) {
         await JobsService.unsaveJob(job.id)
+        showSuccess("Job removed from saved jobs", "Bookmark Removed")
       } else {
         await JobsService.saveJob(job.id)
+        showSuccess("Job saved to your bookmarks!", "Bookmarked")
       }
       
       // Refresh job details to get updated save status
       await fetchJobDetails()
     } catch (error) {
       console.error('Error saving/unsaving job:', error)
-      alert("An error occurred while saving the job. Please try again.")
+      showError("An error occurred while saving the job. Please try again.", "Error")
     } finally {
       setSaving(false)
     }
@@ -138,7 +144,7 @@ export default function JobDetailsPage() {
   // Contact functions
   const handleEmailContact = () => {
     if (!job?.employer?.email || job.employer.email === 'Contact via platform') {
-      alert('Contact information is not available. Please apply through the platform and the employer will be notified.')
+      showWarning('Contact information is not available. Please apply through the platform and the employer will be notified.', 'Contact Not Available')
       return
     }
     

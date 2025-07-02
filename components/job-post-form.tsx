@@ -18,6 +18,7 @@ import { validateEmployerProfileForJobPosting } from "@/lib/profile-validation"
 import ProfileCompletionPrompt from "@/components/profile-completion-prompt"
 import type { ProfileValidationResult } from "@/lib/profile-validation"
 import { supabase } from "@/lib/supabase"
+import { useFeedback } from "@/components/ui/feedback"
 
 interface JobPostFormProps {
   onJobPost?: (job: Job) => void
@@ -38,6 +39,8 @@ interface JobFormData {
 }
 
 export default function JobPostForm({ onJobPost }: JobPostFormProps) {
+  const { showSuccess, showError } = useFeedback()
+  
   const [formData, setFormData] = useState<JobFormData>({
     title: "",
     description: "",
@@ -154,10 +157,10 @@ export default function JobPostForm({ onJobPost }: JobPostFormProps) {
         images: []
       })
 
-      alert("Job posted successfully!")
+      showSuccess("Job posted successfully!", "Success")
     } catch (err) {
       console.error('Error posting job:', err)
-      setError("An unexpected error occurred. Please try again.")
+      showError("An unexpected error occurred. Please try again.", "Posting Failed")
     } finally {
       setIsSubmitting(false)
     }

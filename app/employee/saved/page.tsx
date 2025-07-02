@@ -10,9 +10,12 @@ import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, Bookmar
 import { useRouter } from "next/navigation"
 import { JobsService } from "@/lib/jobs-service"
 import type { JobWithStatus } from "@/lib/database-types"
+import { useFeedback } from "@/components/ui/feedback"
 
 export default function SavedJobsPage() {
   const router = useRouter()
+  const { showSuccess } = useFeedback()
+  
   const [savedJobs, setSavedJobs] = useState<JobWithStatus[]>([])
   const [appliedJobs, setAppliedJobs] = useState<JobWithStatus[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,6 +59,7 @@ export default function SavedJobsPage() {
 
     try {
       await JobsService.unsaveJob(jobId)
+      showSuccess("Job removed from bookmarks", "Bookmark Removed")
       // Refresh the saved jobs list
       loadJobs()
     } catch (error) {

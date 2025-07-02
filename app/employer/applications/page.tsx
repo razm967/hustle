@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, XCircle, Clock, User, Mail, Phone, MapPin, MessageSquare, Briefcase, Calendar, Timer, CheckSquare } from "lucide-react"
 import { JobsService } from "@/lib/jobs-service"
 import { getUserInitials } from "@/lib/user-utils"
+import { useFeedback } from "@/components/ui/feedback"
 
 interface JobApplication {
   id: string
@@ -45,6 +46,7 @@ export default function EmployerApplicationsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set())
+  const { showSuccess, showError } = useFeedback()
 
   useEffect(() => {
     fetchApplications()
@@ -91,14 +93,20 @@ export default function EmployerApplicationsPage() {
       }
       
       if (success) {
+        // Show success message
+        if (action === 'accepted') {
+          showSuccess('Application accepted successfully!', 'Success')
+        } else {
+          showSuccess('Application rejected.', 'Success')
+        }
         // Refresh applications (this will automatically filter out accepted ones)
         await fetchApplications()
       } else {
-        alert(`Failed to ${action} application: ${actionError}`)
+        showError(`Failed to ${action} application: ${actionError}`, 'Error')
       }
     } catch (err) {
       console.error(`Error ${action} application:`, err)
-      alert(`An unexpected error occurred. Please try again.`)
+      showError('An unexpected error occurred. Please try again.', 'Error')
     } finally {
       setProcessingIds(prev => {
         const newSet = new Set(prev)

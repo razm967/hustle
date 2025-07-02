@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import type { Job } from "@/lib/database-types"
+import { useFeedback } from "@/components/ui/feedback"
 
 // Mapbox API configuration
 const MAPBOX_ACCESS_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
@@ -47,6 +48,8 @@ export default function SmartLocationFilter({
   onDistanceChange,
   disabled = false
 }: SmartLocationFilterProps) {
+  const { showWarning, showError } = useFeedback()
+  
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -284,7 +287,7 @@ export default function SmartLocationFilter({
   // Get user's current location
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by this browser.')
+      showWarning('Geolocation is not supported by this browser.', 'Location Not Available')
       return
     }
 
@@ -297,7 +300,7 @@ export default function SmartLocationFilter({
       },
       (error) => {
         console.error('Error getting location:', error)
-        alert('Unable to retrieve your location. Please allow location access or enter manually.')
+        showError('Unable to retrieve your location. Please allow location access or enter manually.', 'Location Access Error')
         setIsLoading(false)
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }

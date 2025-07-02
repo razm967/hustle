@@ -11,12 +11,12 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Building, Mail, Phone, Globe, Save, Calendar } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getCurrentUserProfile, getUserInitials } from '@/lib/user-utils'
 import type { UserProfile } from '@/lib/database-types'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
+import { useFeedback } from '@/components/ui/feedback'
 
 // Profile form schema
 const profileSchema = z.object({
@@ -34,8 +34,7 @@ export default function EmployerProfilePage() {
   const [userInitials, setUserInitials] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSuccess, setIsSuccess] = useState(false)
+  const { showSuccess, showError } = useFeedback()
 
   const {
     register,
@@ -70,7 +69,7 @@ export default function EmployerProfilePage() {
       }
     } catch (error) {
       console.error('Error loading user profile:', error)
-      setMessage('Failed to load profile data')
+      showError('Failed to load profile data')
     } finally {
       setIsLoading(false)
     }
@@ -78,13 +77,12 @@ export default function EmployerProfilePage() {
 
   const onSubmit = async (data: ProfileFormData) => {
     setIsSaving(true)
-    setMessage(null)
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
-        setMessage('You must be logged in to update your profile')
+        showError('You must be logged in to update your profile')
         return
       }
 
@@ -101,17 +99,14 @@ export default function EmployerProfilePage() {
         .eq('id', user.id)
 
       if (error) {
-        setMessage(error.message)
-        setIsSuccess(false)
+        showError(error.message)
       } else {
-        setMessage('Profile updated successfully!')
-        setIsSuccess(true)
+        showSuccess('Profile updated successfully!')
         // Reload profile data
         await loadUserProfile()
       }
     } catch (error) {
-      setMessage('An unexpected error occurred. Please try again.')
-      setIsSuccess(false)
+      showError('An unexpected error occurred. Please try again.')
     } finally {
       setIsSaving(false)
     }
@@ -122,7 +117,7 @@ export default function EmployerProfilePage() {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
-        setMessage('You must be logged in to update your profile')
+        showError('You must be logged in to update your profile')
         return
       }
 
@@ -136,17 +131,14 @@ export default function EmployerProfilePage() {
         .eq('id', user.id)
 
       if (error) {
-        setMessage(error.message)
-        setIsSuccess(false)
+        showError(error.message)
       } else {
-        setMessage('Profile picture updated successfully!')
-        setIsSuccess(true)
+        showSuccess('Profile picture updated successfully!')
         // Reload profile data
         await loadUserProfile()
       }
     } catch (error) {
-      setMessage('An unexpected error occurred while updating profile picture.')
-      setIsSuccess(false)
+      showError('An unexpected error occurred while updating profile picture.')
     }
   }
 
@@ -267,13 +259,6 @@ export default function EmployerProfilePage() {
                   />
                 </div>
               </div>
-
-              {/* Message */}
-              {message && (
-                <Alert variant={isSuccess ? "default" : "destructive"}>
-                  <AlertDescription>{message}</AlertDescription>
-                </Alert>
-              )}
 
               {/* Submit Button */}
               <Button type="submit" className="w-full" disabled={isSaving}>

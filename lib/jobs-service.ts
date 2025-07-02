@@ -1114,4 +1114,105 @@ export class JobsService {
       return { success: false, error: "An unexpected error occurred" }
     }
   }
+
+  static async getEmployeeEarnings(): Promise<{ 
+    data: Array<{
+      id: string
+      title: string
+      pay: string
+      duration: string | null
+      completed_at: string
+      calculated_earnings: number
+    }> | null
+    error: string | null 
+  }> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !user) {
+        return { data: null, error: "User not authenticated" }
+      }
+
+      // Get all completed jobs for the employee
+      const { data: applications, error: applicationsError } = await supabase
+        .from('job_applications')
+        .select(`
+          job_id,
+          jobs!inner (
+            id,
+            title,
+            pay,
+            duration,
+            updated_at
+          )
+        `)
+        .eq('employee_id', user.id)
+        .eq('status', 'accepted')
+        .eq('jobs.status', 'completed')
+
+      if (applicationsError) {
+        console.error('Error fetching completed jobs:', applicationsError)
+        return { data: null, error: applicationsError.message }
+      }
+
+      if (!applications) {
+        return { data: [], error: null }
+      }
+
+      // Calculate earnings for each job
+      const jobsWithEarnings = applications.map(app => {
+        // Explicitly type the job from the response
+        const job = (app as any).jobs as {
+          id: string
+          title: string
+          pay: string
+          duration: string | null
+          updated_at: string
+        }
+        
+        if (!job) return null
+
+        // Parse pay amount and check if it's hourly
+        const payString = job.pay.toLowerCase()
+        const payMatch = payString.match(/\$(\d+)(?:\s*\/\s*hr)?/)
+        const isHourly = payString.includes('/hr') || payString.includes('per hour')
+        
+        let calculatedEarnings = 0
+        
+        if (payMatch) {
+          const baseRate = parseInt(payMatch[1])
+          
+          if (isHourly && job.duration) {
+            // Parse duration (assuming format like "2 hours" or "2.5 hours")
+            const durationMatch = job.duration.match(/(\d+(?:\.\d+)?)\s*hours?/)
+            if (durationMatch) {
+              const hours = parseFloat(durationMatch[1])
+              calculatedEarnings = baseRate * hours
+            } else {
+              calculatedEarnings = baseRate // Default to base rate if duration parsing fails
+            }
+          } else {
+            calculatedEarnings = baseRate // Fixed rate job
+          }
+        }
+
+        return {
+          id: job.id,
+          title: job.title,
+          pay: job.pay,
+          duration: job.duration,
+          completed_at: job.updated_at,
+          calculated_earnings: calculatedEarnings
+        }
+      }).filter((job): job is NonNullable<typeof job> => job !== null)
+
+      return { 
+        data: jobsWithEarnings,
+        error: null 
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      return { data: null, error: "An unexpected error occurred" }
+    }
+  }
 } 

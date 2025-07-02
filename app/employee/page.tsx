@@ -7,9 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { CheckCircle, XCircle, Bell, Briefcase, MapPin, Calendar, Clock, CheckCheck, Star, Timer, Award, CheckSquare } from "lucide-react"
+import { CheckCircle, XCircle, Bell, Briefcase, MapPin, Calendar, Clock, CheckCheck, Star, Timer, Award, CheckSquare, DollarSign } from "lucide-react"
 import { JobsService } from "@/lib/jobs-service"
 import { supabase } from "@/lib/supabase"
+import { useFeedback } from "@/components/ui/feedback"
+import { EarningsChart } from "@/components/ui/chart"
+import { RatingsChart } from "@/components/ui/ratings-chart"
 
 interface ApplicationNotification {
   id: string
@@ -34,16 +37,27 @@ interface ApplicationNotification {
 }
 
 export default function EmployeeDashboard() {
+  const { showSuccess, showError } = useFeedback()
+  
   const [notifications, setNotifications] = useState<ApplicationNotification[]>([])
   const [ratings, setRatings] = useState<{ work_quality: number; availability: number; friendliness: number; total_ratings: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [showCompleteDialog, setShowCompleteDialog] = useState(false)
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [completingJob, setCompletingJob] = useState(false)
+  const [earningsData, setEarningsData] = useState<Array<{
+    id: string
+    title: string
+    pay: string
+    duration: string | null
+    completed_at: string
+    calculated_earnings: number
+  }> | null>(null)
 
   useEffect(() => {
     fetchNotifications()
     fetchUserRatings()
+    fetchEarningsData()
   }, [])
 
   const fetchNotifications = async () => {
@@ -73,6 +87,20 @@ export default function EmployeeDashboard() {
     }
   }
 
+  const fetchEarningsData = async () => {
+    try {
+      const { data, error } = await JobsService.getEmployeeEarnings()
+      if (error) {
+        showError(error)
+      } else if (data) {
+        setEarningsData(data)
+      }
+    } catch (err) {
+      console.error('Error fetching earnings data:', err)
+      showError('Failed to load earnings data')
+    }
+  }
+
   const handleCompleteJob = (jobId: string) => {
     setSelectedJobId(jobId)
     setShowCompleteDialog(true)
@@ -86,6 +114,8 @@ export default function EmployeeDashboard() {
       const { success, error } = await JobsService.completeJob(selectedJobId)
       
       if (success) {
+        showSuccess('Job marked as completed successfully!', 'Success')
+        
         // Add a small delay to ensure database update is complete
         setTimeout(async () => {
           await fetchNotifications()
@@ -94,11 +124,11 @@ export default function EmployeeDashboard() {
         setShowCompleteDialog(false)
         setSelectedJobId(null)
       } else {
-        alert(`Error completing job: ${error}`)
+        showError(`Error completing job: ${error}`, 'Error')
       }
     } catch (err) {
       console.error('Error completing job:', err)
-      alert('An unexpected error occurred')
+      showError('An unexpected error occurred', 'Error')
     } finally {
       setCompletingJob(false)
     }
@@ -259,61 +289,60 @@ export default function EmployeeDashboard() {
           </div>
         )}
 
+        {/* Earnings Chart */}
+        {!loading && earningsData && (
+          <div className="max-w-4xl mx-auto mb-8">
+            <EarningsChart data={earningsData} />
+          </div>
+        )}
+
+        {/* Quick Stats */}
+        <div className="max-w-4xl mx-auto mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="p-4">
+              <div>
+                <div className="flex items-center gap-2 text-lg mb-1">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                  Total Earnings
+                </div>
+                <p className="text-2xl font-bold text-green-600">
+                  ${earningsData?.reduce((sum, job) => sum + job.calculated_earnings, 0).toFixed(2) || '0.00'}
+                </p>
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <div>
+                <div className="flex items-center gap-2 text-lg mb-1">
+                  <CheckCheck className="h-5 w-5 text-blue-600" />
+                  Completed Jobs
+                </div>
+                <p className="text-2xl font-bold text-blue-600">
+                  {earningsData?.length || 0}
+                </p>
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <div>
+                <div className="flex items-center gap-2 text-lg mb-1">
+                  <DollarSign className="h-5 w-5 text-yellow-600" />
+                  Average Payment
+                </div>
+                <p className="text-2xl font-bold text-yellow-600">
+                  ${earningsData && earningsData.length > 0 
+                    ? (earningsData.reduce((sum, job) => sum + job.calculated_earnings, 0) / earningsData.length).toFixed(2) 
+                    : '0.00'}
+                </p>
+              </div>
+            </Card>
+          </div>
+        </div>
+
         {/* Employee Ratings Display */}
         {!loading && ratings && ratings.total_ratings > 0 && (
           <div className="max-w-4xl mx-auto mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  Your Performance Ratings
-                </CardTitle>
-                <CardDescription>
-                  Average ratings from {ratings.total_ratings} completed jobs
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Work Quality</span>
-                      <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{ratings.work_quality.toFixed(1)}/10</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                      <div 
-                        className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
-                        style={{ width: `${(ratings.work_quality / 10) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Availability</span>
-                      <span className="text-sm font-bold text-green-600 dark:text-green-400">{ratings.availability.toFixed(1)}/10</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                      <div 
-                        className="bg-green-600 h-3 rounded-full transition-all duration-300" 
-                        style={{ width: `${(ratings.availability / 10) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Friendliness</span>
-                      <span className="text-sm font-bold text-purple-600 dark:text-purple-400">{ratings.friendliness.toFixed(1)}/10</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                      <div 
-                        className="bg-purple-600 h-3 rounded-full transition-all duration-300" 
-                        style={{ width: `${(ratings.friendliness / 10) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <RatingsChart data={ratings} />
           </div>
         )}
         

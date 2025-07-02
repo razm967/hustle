@@ -10,8 +10,11 @@ import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Bell, Star, CheckCircle } from "lucide-react"
 import { JobsService } from "@/lib/jobs-service"
+import { useFeedback } from "@/components/ui/feedback"
 
 export default function EmployerDashboard() {
+  const { showSuccess, showError } = useFeedback()
+  
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showRatingDialog, setShowRatingDialog] = useState(false)
@@ -57,6 +60,8 @@ export default function EmployerDashboard() {
       )
       
       if (success) {
+        showSuccess('Employee rating submitted successfully!', 'Success')
+        
         // Mark notification as read and refresh
         await JobsService.markNotificationAsRead(selectedNotification.id)
         await fetchNotifications()
@@ -64,11 +69,11 @@ export default function EmployerDashboard() {
         setSelectedNotification(null)
         setRatings({ work_quality: 5, availability: 5, friendliness: 5 })
       } else {
-        alert(`Error submitting rating: ${error}`)
+        showError(`Error submitting rating: ${error}`, 'Rating Failed')
       }
     } catch (err) {
       console.error('Error submitting rating:', err)
-      alert('An unexpected error occurred')
+      showError('An unexpected error occurred', 'Error')
     } finally {
       setSubmittingRating(false)
     }

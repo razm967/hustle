@@ -2,6 +2,9 @@
 
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
+import { useEffect, useRef } from 'react'
+import Chart from 'chart.js/auto'
+import { Card, CardContent, CardHeader, CardTitle } from './card'
 
 import { cn } from "@/lib/utils"
 
@@ -341,6 +344,183 @@ function getPayloadConfigFromPayload(
   return configLabelKey in config
     ? config[configLabelKey]
     : config[key as keyof typeof config]
+}
+
+interface EarningsData {
+  id: string
+  title: string
+  pay: string
+  duration: string | null
+  completed_at: string
+  calculated_earnings: number
+}
+
+interface DailyEarnings {
+  date: string
+  earnings: number
+  jobs: number
+}
+
+interface EarningsChartProps {
+  data: EarningsData[]
+  className?: string
+}
+
+export function EarningsChart({ data, className }: EarningsChartProps) {
+  const chartRef = useRef<HTMLCanvasElement>(null)
+  const chartInstance = useRef<Chart | null>(null)
+
+  useEffect(() => {
+    // Group jobs by date and calculate daily earnings
+    const dailyEarnings = new Map<string, DailyEarnings>()
+    
+    // Get date range
+    const dates = data.map(job => new Date(job.completed_at).toISOString().split('T')[0])
+    const minDate = new Date(Math.min(...dates.map(d => new Date(d).getTime())))
+    const maxDate = new Date(Math.max(...dates.map(d => new Date(d).getTime())))
+    
+    // Fill in all dates in range
+    const currentDate = new Date(minDate)
+    while (currentDate <= maxDate) {
+      const dateStr = currentDate.toISOString().split('T')[0]
+      dailyEarnings.set(dateStr, {
+        date: dateStr,
+        earnings: 0,
+        jobs: 0
+      })
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+
+    // Aggregate job data by date
+    data.forEach(job => {
+      const dateStr = new Date(job.completed_at).toISOString().split('T')[0]
+      const existing = dailyEarnings.get(dateStr) || {
+        date: dateStr,
+        earnings: 0,
+        jobs: 0
+      }
+      
+      existing.earnings += job.calculated_earnings
+      existing.jobs += 1
+      dailyEarnings.set(dateStr, existing)
+    })
+
+    // Convert to array and sort by date
+    const chartData = Array.from(dailyEarnings.values())
+      .sort((a, b) => a.date.localeCompare(b.date))
+
+    // Calculate cumulative earnings
+    let cumulative = 0
+    const cumulativeData = chartData.map(day => {
+      cumulative += day.earnings
+      return cumulative
+    })
+
+    if (chartInstance.current) {
+      chartInstance.current.destroy()
+    }
+
+    const ctx = chartRef.current?.getContext('2d')
+    if (!ctx) return
+
+    chartInstance.current = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartData.map(day => {
+          const date = new Date(day.date)
+          return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+          })
+        }),
+        datasets: [
+          {
+            label: 'Total Earnings',
+            data: cumulativeData,
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            borderColor: 'rgb(59, 130, 246)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgb(59, 130, 246)',
+            tension: 0.4,
+          },
+          {
+            label: 'Daily Earnings',
+            data: chartData.map(day => day.earnings),
+            backgroundColor: 'rgba(34, 197, 94, 0.2)',
+            borderColor: 'rgb(34, 197, 94)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgb(34, 197, 94)',
+            tension: 0.4,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        scales: {
+          x: {
+            display: true,
+            title: {
+              display: true,
+              text: 'Completion Date'
+            },
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Earnings ($)'
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              title: (context) => {
+                const index = context[0].dataIndex;
+                const day = chartData[index];
+                return day.date;
+              },
+              label: function(context) {
+                const value = context.raw as number;
+                return `$${value.toFixed(2)}`;
+              }
+            }
+          }
+        }
+      }
+    })
+
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.destroy()
+      }
+    }
+  }, [data])
+
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>Earnings Overview</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="w-full aspect-[2/1] min-h-[300px]">
+          <canvas ref={chartRef} />
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export {

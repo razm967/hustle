@@ -8,6 +8,7 @@ import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, Bookmar
 import { useRouter } from "next/navigation"
 import { JobsService } from "@/lib/jobs-service"
 import type { JobWithStatus } from "@/lib/database-types"
+import { useFeedback } from "@/components/ui/feedback"
 
 interface JobListingsProps {
   jobs: JobWithStatus[]
@@ -16,6 +17,7 @@ interface JobListingsProps {
 
 export default function JobListings({ jobs, onJobSaved }: JobListingsProps) {
   const router = useRouter()
+  const { showSuccess } = useFeedback()
   const [savingJobId, setSavingJobId] = useState<string | null>(null)
 
   const handleViewJob = (jobId: string) => {
@@ -30,8 +32,10 @@ export default function JobListings({ jobs, onJobSaved }: JobListingsProps) {
     try {
       if (isSaved) {
         await JobsService.unsaveJob(jobId)
+        showSuccess("Job removed from bookmarks", "Bookmark Removed")
       } else {
         await JobsService.saveJob(jobId)
+        showSuccess("Job bookmarked!", "Saved")
       }
       
       // Call the callback to refresh data
