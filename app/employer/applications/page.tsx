@@ -358,8 +358,7 @@ export default function EmployerApplicationsPage() {
                               <Button
                                 onClick={() => handleApplicationAction(application.id, 'accepted')}
                                 disabled={processingIds.has(application.id)}
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none lg:flex-none"
+                                className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none lg:flex-none h-12 sm:h-9 lg:h-9 text-sm font-medium"
                               >
                                 <CheckCircle className="h-4 w-4 mr-1" />
                                 Accept
@@ -368,8 +367,7 @@ export default function EmployerApplicationsPage() {
                                 onClick={() => handleApplicationAction(application.id, 'rejected')}
                                 disabled={processingIds.has(application.id)}
                                 variant="outline"
-                                size="sm"
-                                className="text-red-600 border-red-200 hover:bg-red-50 flex-1 sm:flex-none lg:flex-none"
+                                className="text-red-600 border-red-200 hover:bg-red-50 flex-1 sm:flex-none lg:flex-none h-12 sm:h-9 lg:h-9 text-sm font-medium"
                               >
                                 <XCircle className="h-4 w-4 mr-1" />
                                 Reject
