@@ -245,10 +245,10 @@ export default function EmployerApplicationsPage() {
                   <div className="space-y-4">
                     {jobApplications.map((application) => (
                       <div key={application.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                        <div className="flex items-start justify-between">
+                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                           <div className="flex items-start space-x-4 flex-1">
                             {/* Avatar */}
-                            <Avatar className="h-12 w-12">
+                            <Avatar className="h-12 w-12 flex-shrink-0">
                               <AvatarImage src="/placeholder-avatar.jpg" alt="Applicant" />
                               <AvatarFallback className="bg-blue-600 text-white">
                                 {getUserInitials(application.employee.full_name, application.employee.email)}
@@ -257,7 +257,7 @@ export default function EmployerApplicationsPage() {
 
                             {/* Applicant Info */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-2">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
                                 <h4 className="text-lg font-medium text-gray-900 dark:text-white">
                                   {application.employee.full_name || 'Anonymous Applicant'}
                                 </h4>
@@ -266,23 +266,23 @@ export default function EmployerApplicationsPage() {
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400 mb-3">
                                 <div className="flex items-center gap-2">
-                                  <Mail className="h-4 w-4" />
-                                  {application.employee.email}
+                                  <Mail className="h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{application.employee.email}</span>
                                 </div>
                                 {application.employee.phone && (
                                   <div className="flex items-center gap-2">
-                                    <Phone className="h-4 w-4" />
-                                    {application.employee.phone}
+                                    <Phone className="h-4 w-4 flex-shrink-0" />
+                                    <span>{application.employee.phone}</span>
                                   </div>
                                 )}
                                 <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4" />
-                                  Applied {new Date(application.created_at).toLocaleDateString()}
+                                  <Calendar className="h-4 w-4 flex-shrink-0" />
+                                  <span>Applied {new Date(application.created_at).toLocaleDateString()}</span>
                                 </div>
                               </div>
 
                               {/* Contact Buttons */}
-                              <div className="flex gap-2 mb-3">
+                              <div className="flex flex-wrap gap-2 mb-3">
                                 <Button
                                   onClick={() => handleEmailContact(application.employee.email)}
                                   size="sm"
@@ -321,11 +321,11 @@ export default function EmployerApplicationsPage() {
                                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-3">
                                   <div className="flex items-start gap-2">
                                     <MessageSquare className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                                    <div>
+                                    <div className="min-w-0 flex-1">
                                       <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
                                         Application Message:
                                       </p>
-                                      <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                      <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
                                         {application.message}
                                       </p>
                                     </div>
@@ -338,11 +338,11 @@ export default function EmployerApplicationsPage() {
                                 <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
                                   <div className="flex items-start gap-2">
                                     <User className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                    <div>
+                                    <div className="min-w-0 flex-1">
                                       <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
                                         About the Applicant:
                                       </p>
-                                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                                      <p className="text-sm text-gray-700 dark:text-gray-300 break-words">
                                         {application.employee.bio}
                                       </p>
                                     </div>
@@ -352,14 +352,14 @@ export default function EmployerApplicationsPage() {
                             </div>
                           </div>
 
-                          {/* Action Buttons */}
+                          {/* Action Buttons - Mobile responsive positioning */}
                           {application.status === 'pending' && (
-                            <div className="flex gap-2 ml-4">
+                            <div className="flex flex-col sm:flex-row gap-2 lg:flex-col lg:w-auto w-full">
                               <Button
                                 onClick={() => handleApplicationAction(application.id, 'accepted')}
                                 disabled={processingIds.has(application.id)}
                                 size="sm"
-                                className="bg-green-600 hover:bg-green-700"
+                                className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none lg:flex-none"
                               >
                                 <CheckCircle className="h-4 w-4 mr-1" />
                                 Accept
@@ -369,7 +369,7 @@ export default function EmployerApplicationsPage() {
                                 disabled={processingIds.has(application.id)}
                                 variant="outline"
                                 size="sm"
-                                className="text-red-600 border-red-200 hover:bg-red-50"
+                                className="text-red-600 border-red-200 hover:bg-red-50 flex-1 sm:flex-none lg:flex-none"
                               >
                                 <XCircle className="h-4 w-4 mr-1" />
                                 Reject
