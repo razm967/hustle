@@ -6,6 +6,7 @@ import "./globals.css";
 import { StagewiseToolbar } from "@stagewise/toolbar-next";
 import { ReactPlugin } from "@stagewise-plugins/react";
 import { FeedbackProvider } from "@/components/ui/feedback";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,8 +42,11 @@ export default function RootLayout({
           
           {/* Main Content */}
           <main>
-          {children}
+            {children}
           </main>
+          
+          {/* Speed Insights */}
+          <SpeedInsights />
         </FeedbackProvider>
       </body>
     </html>
