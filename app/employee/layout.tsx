@@ -3,7 +3,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import { useState } from "react";
-import HeroSection from "@/components/heroSection";
+import HeroSection from "@/components/navBar";
 import Sidebar from "@/components/Sidebar";
 import RoleAuthGuard from "@/components/role-auth-guard";
 

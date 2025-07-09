@@ -162,8 +162,6 @@ export default function Sidebar({
         <div className="space-y-2">
           {navigationItems.map((item, index) => {
             const IconComponent = item.icon
-            // Skip "About Us" as it doesn't exist yet
-            if (item.href === "/about") return null
             
             return (
               <Link
@@ -186,7 +184,7 @@ export default function Sidebar({
               >
                 <IconComponent className="h-5 w-5 group-hover:scale-110 transition-transform duration-200 flex-shrink-0" />
                 <span className="font-medium">{item.label}</span>
-          </Link>
+              </Link>
             )
           })}
         </div>

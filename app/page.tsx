@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react";
-import HeroSection from "@/components/heroSection";
+import Link from "next/link";
+import HeroSection from "@/components/navBar";
 import Sidebar from "@/components/Sidebar";
 
 export default function Home() {
@@ -39,16 +40,20 @@ export default function Home() {
             </span>
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
-            Transform your productivity with focused action and intentional living. 
-            Join thousands who choose clarity over complexity.
+            Connecting ambitious teenagers with meaningful work opportunities. 
+            Earn money, gain experience, and build your future one job at a time.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
-              Get Started
-            </button>
-            <button className="border border-blue-600 text-blue-600 dark:text-blue-400 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors">
-              Learn More
-            </button>
+            <Link href="/auth/signup">
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
+                Join as Teen
+              </button>
+            </Link>
+            <Link href="/about">
+              <button className="border border-blue-600 text-blue-600 dark:text-blue-400 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors">
+                Learn More
+              </button>
+            </Link>
           </div>
         </div>
       </section>
@@ -57,7 +62,7 @@ export default function Home() {
       <section className="py-20 bg-white dark:bg-gray-800">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 dark:text-white mb-12">
-            Why Choose Hustle?
+            Why Teens & Employers Choose Hustle
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature 1 */}
@@ -68,10 +73,10 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-                Lightning Fast
+                Easy to Use
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Get things done quickly with our streamlined interface and intuitive design.
+                Simple job posting and application process designed specifically for teens and local employers.
               </p>
             </div>
 
@@ -83,10 +88,10 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-                Reliable
+                Safe & Secure
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Count on consistent performance and secure data handling for all your tasks.
+                Built-in safety measures, verified profiles, and secure payment processing for peace of mind.
               </p>
             </div>
 
@@ -98,10 +103,10 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-                User Focused
+                Youth Focused
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Built with user experience in mind, making productivity feel natural and effortless.
+                Designed specifically for teenagers with age-appropriate jobs, fair wages, and educational support.
               </p>
             </div>
           </div>
@@ -115,11 +120,13 @@ export default function Home() {
             Ready to Start Your Journey?
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of people who have transformed their productivity with Hustle.
+            Join the growing community of teens earning money and employers finding reliable help.
           </p>
-          <button className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-            Get Started Today
-          </button>
+          <Link href="/auth/signup">
+            <button className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+              Get Started Today
+            </button>
+          </Link>
         </div>
       </section>
     </div>
