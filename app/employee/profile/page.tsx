@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Loader2, User, Mail, Phone, Calendar, Save } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { getCurrentUserProfile, getUserInitials } from '@/lib/user-utils'
+import { getCurrentUserProfile, getUserInitials, validateEmployeeAge } from '@/lib/user-utils'
 import type { UserProfile } from '@/lib/database-types'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
 import { useFeedback } from '@/components/ui/feedback'
@@ -22,10 +22,16 @@ import { useFeedback } from '@/components/ui/feedback'
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  birth_date: z.string().optional(),
+  birth_date: z.string().min(1, 'Birth date is required'),
   phone: z.string().optional(),
   bio: z.string().optional(),
   availability: z.string().optional(),
+}).refine((data) => {
+  const ageValidation = validateEmployeeAge(data.birth_date)
+  return ageValidation.isValid
+}, {
+  message: "You must be at least 14 years old to create an employee profile",
+  path: ["birth_date"],
 })
 
 type ProfileFormData = z.infer<typeof profileSchema>
@@ -85,6 +91,14 @@ export default function EmployeeProfilePage() {
       
       if (!user) {
         showError('You must be logged in to update your profile')
+        return
+      }
+
+      // Validate age requirement
+      const ageValidation = validateEmployeeAge(data.birth_date)
+      if (!ageValidation.isValid) {
+        showError(ageValidation.message)
+        setIsSaving(false)
         return
       }
 
@@ -242,13 +256,18 @@ export default function EmployeeProfilePage() {
                 <div className="space-y-2">
                   <Label htmlFor="birth_date">
                     <Calendar className="h-4 w-4 inline mr-2" />
-                    Birth Date
+                    Birth Date <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="birth_date"
                     type="date"
                     {...register('birth_date')}
+                    required
                   />
+                  {errors.birth_date && (
+                    <p className="text-sm text-red-600">{errors.birth_date.message}</p>
+                  )}
+                  <p className="text-xs text-gray-500">You must be at least 14 years old to apply for jobs</p>
                 </div>
               </div>
 

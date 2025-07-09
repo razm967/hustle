@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, XCircle, Clock, User, Mail, Phone, MapPin, MessageSquare, Briefcase, Calendar, Timer, CheckSquare } from "lucide-react"
 import { JobsService } from "@/lib/jobs-service"
-import { getUserInitials } from "@/lib/user-utils"
+import { getUserInitials, getAgeTier } from "@/lib/user-utils"
 import { useFeedback } from "@/components/ui/feedback"
 
 interface JobApplication {
@@ -38,6 +38,7 @@ interface JobApplication {
     phone?: string
     location?: string
     bio?: string
+    birth_date?: string
   }
 }
 
@@ -269,7 +270,17 @@ export default function EmployerApplicationsPage() {
                                 <h4 className="text-lg font-medium text-gray-900 dark:text-white">
                                   {application.employee.full_name || 'Anonymous Applicant'}
                                 </h4>
-                                {getStatusBadge(application.status)}
+                                <div className="flex gap-2">
+                                  {(() => {
+                                    const ageTier = getAgeTier(application.employee.birth_date)
+                                    return ageTier ? (
+                                      <Badge className={`text-xs ${ageTier.color}`}>
+                                        {ageTier.tier} ({ageTier.age})
+                                      </Badge>
+                                    ) : null
+                                  })()}
+                                  {getStatusBadge(application.status)}
+                                </div>
                               </div>
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400 mb-3">

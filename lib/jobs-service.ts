@@ -593,7 +593,7 @@ export class JobsService {
       const employeeIds = applications.map(app => app.employee_id)
       const { data: employees, error: employeesError } = await supabase
         .from('user_profiles')
-        .select('id, full_name, email, phone, location, bio')
+        .select('id, full_name, email, phone, location, bio, birth_date')
         .in('id', employeeIds)
 
       if (employeesError) {

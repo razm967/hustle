@@ -1,4 +1,4 @@
-import { getCurrentUserProfile } from './user-utils'
+import { getCurrentUserProfile, validateEmployeeAge } from './user-utils'
 
 export interface ProfileValidationResult {
   isValid: boolean
@@ -57,7 +57,7 @@ export async function validateEmployerProfileForJobPosting(): Promise<ProfileVal
 
 /**
  * Validates employee profile for job application requirements
- * Requires: birth_date, phone
+ * Requires: birth_date (with age 14+), phone
  */
 export async function validateEmployeeProfileForApplication(): Promise<ProfileValidationResult> {
   try {
@@ -75,6 +75,16 @@ export async function validateEmployeeProfileForApplication(): Promise<ProfileVa
     
     if (!profile.birth_date || profile.birth_date.trim() === '') {
       missingFields.push('birth date')
+    } else {
+      // Validate age requirement
+      const ageValidation = validateEmployeeAge(profile.birth_date)
+      if (!ageValidation.isValid) {
+        return {
+          isValid: false,
+          missingFields: ['age requirement'],
+          message: ageValidation.message
+        }
+      }
     }
     
     if (!profile.phone || profile.phone.trim() === '') {
