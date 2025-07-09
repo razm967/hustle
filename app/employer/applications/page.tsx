@@ -237,7 +237,16 @@ export default function EmployerApplicationsPage() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {Object.entries(groupedApplications).map(([jobTitle, jobApplications]) => (
+            {Object.entries(groupedApplications)
+              .sort(([, a], [, b]) => {
+                // Sort job groups by highest priority status within each group
+                const getGroupPriority = (apps: JobApplication[]) => {
+                  const hasPending = apps.some(app => app.status === 'pending')
+                  return hasPending ? 0 : 1 // pending groups first
+                }
+                return getGroupPriority(a) - getGroupPriority(b)
+              })
+              .map(([jobTitle, jobApplications]) => (
               <Card key={jobTitle}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -254,9 +263,15 @@ export default function EmployerApplicationsPage() {
                   <div className="space-y-4">
                     {jobApplications
                       .sort((a, b) => {
-                        // Sort by status: pending first, then rejected
-                        if (a.status === 'pending' && b.status === 'rejected') return -1
-                        if (a.status === 'rejected' && b.status === 'pending') return 1
+                        // Priority: pending = 0, rejected = 1
+                        const statusPriority = { pending: 0, rejected: 1, accepted: 2 }
+                        const aPriority = statusPriority[a.status] || 99
+                        const bPriority = statusPriority[b.status] || 99
+                        
+                        if (aPriority !== bPriority) {
+                          return aPriority - bPriority
+                        }
+                        
                         // If same status, sort by creation date (newest first)
                         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
                       })
