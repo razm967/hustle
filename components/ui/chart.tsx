@@ -523,6 +523,185 @@ export function EarningsChart({ data, className }: EarningsChartProps) {
   )
 }
 
+interface SpendingData {
+  id: string
+  title: string
+  pay: string
+  duration: string | null
+  completed_at: string
+  calculated_spending: number
+}
+
+interface DailySpending {
+  date: string
+  spending: number
+  jobs: number
+}
+
+interface SpendingChartProps {
+  data: SpendingData[]
+  className?: string
+}
+
+export function SpendingChart({ data, className }: SpendingChartProps) {
+  const chartRef = useRef<HTMLCanvasElement>(null)
+  const chartInstance = useRef<Chart | null>(null)
+
+  useEffect(() => {
+    if (data.length === 0) return
+
+    // Group jobs by date and calculate daily spending
+    const dailySpending = new Map<string, DailySpending>()
+    
+    // Get date range
+    const dates = data.map(job => new Date(job.completed_at).toISOString().split('T')[0])
+    const minDate = new Date(Math.min(...dates.map(d => new Date(d).getTime())))
+    const maxDate = new Date(Math.max(...dates.map(d => new Date(d).getTime())))
+    
+    // Fill in all dates in range
+    const currentDate = new Date(minDate)
+    while (currentDate <= maxDate) {
+      const dateStr = currentDate.toISOString().split('T')[0]
+      dailySpending.set(dateStr, {
+        date: dateStr,
+        spending: 0,
+        jobs: 0
+      })
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+
+    // Aggregate job data by date
+    data.forEach(job => {
+      const dateStr = new Date(job.completed_at).toISOString().split('T')[0]
+      const existing = dailySpending.get(dateStr) || {
+        date: dateStr,
+        spending: 0,
+        jobs: 0
+      }
+      
+      existing.spending += job.calculated_spending
+      existing.jobs += 1
+      dailySpending.set(dateStr, existing)
+    })
+
+    // Convert to array and sort by date
+    const chartData = Array.from(dailySpending.values())
+      .sort((a, b) => a.date.localeCompare(b.date))
+
+    // Calculate cumulative spending
+    let cumulative = 0
+    const cumulativeData = chartData.map(day => {
+      cumulative += day.spending
+      return cumulative
+    })
+
+    if (chartInstance.current) {
+      chartInstance.current.destroy()
+    }
+
+    const ctx = chartRef.current?.getContext('2d')
+    if (!ctx) return
+
+    chartInstance.current = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartData.map(day => {
+          const date = new Date(day.date)
+          return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+          })
+        }),
+        datasets: [
+          {
+            label: 'Total Spending',
+            data: cumulativeData,
+            backgroundColor: 'rgba(147, 51, 234, 0.2)',
+            borderColor: 'rgb(147, 51, 234)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgb(147, 51, 234)',
+            tension: 0.4,
+          },
+          {
+            label: 'Daily Spending',
+            data: chartData.map(day => day.spending),
+            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+            borderColor: 'rgb(239, 68, 68)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgb(239, 68, 68)',
+            tension: 0.4,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        scales: {
+          x: {
+            display: true,
+            title: {
+              display: true,
+              text: 'Completion Date'
+            },
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Spending ($)'
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              title: (context) => {
+                const index = context[0].dataIndex;
+                const day = chartData[index];
+                return day.date;
+              },
+              label: function(context) {
+                const value = context.raw as number;
+                return `$${value.toFixed(2)}`;
+              }
+            }
+          }
+        }
+      }
+    })
+
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.destroy()
+      }
+    }
+  }, [data])
+
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>Spending Overview</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="w-full aspect-[2/1] min-h-[300px]">
+          <canvas ref={chartRef} />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export {
   ChartContainer,
   ChartTooltip,

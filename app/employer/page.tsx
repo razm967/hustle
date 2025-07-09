@@ -8,14 +8,48 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
-import { Bell, Star, CheckCircle } from "lucide-react"
+import { Bell, Star, CheckCircle, Briefcase, Users, DollarSign, TrendingUp, Clock } from "lucide-react"
 import { JobsService } from "@/lib/jobs-service"
 import { useFeedback } from "@/components/ui/feedback"
+import { SpendingChart } from "@/components/ui/chart"
+
+interface EmployerAnalytics {
+  totalJobs: number
+  activeJobs: number
+  completedJobs: number
+  totalApplications: number
+  pendingApplications: number
+  acceptedApplications: number
+  rejectedApplications: number
+  averageEmployeeRating: number
+  totalSpent: number
+  topEmployees: Array<{
+    id: string
+    name: string
+    email: string
+    jobsCompleted: number
+    averageRating: number
+  }>
+  recentActivity: Array<{
+    type: 'job_posted' | 'application_received' | 'job_completed' | 'employee_rated'
+    message: string
+    date: string
+  }>
+}
 
 export default function EmployerDashboard() {
   const { showSuccess, showError } = useFeedback()
   
   const [notifications, setNotifications] = useState<any[]>([])
+  const [analytics, setAnalytics] = useState<EmployerAnalytics | null>(null)
+  const [spendingData, setSpendingData] = useState<Array<{
+    id: string
+    title: string
+    pay: string
+    duration: string | null
+    completed_at: string
+    calculated_spending: number
+  }> | null>(null)
   const [loading, setLoading] = useState(true)
   const [showRatingDialog, setShowRatingDialog] = useState(false)
   const [selectedNotification, setSelectedNotification] = useState<any>(null)
@@ -27,8 +61,38 @@ export default function EmployerDashboard() {
   const [submittingRating, setSubmittingRating] = useState(false)
 
   useEffect(() => {
-    fetchNotifications()
+    fetchData()
   }, [])
+
+  const fetchData = async () => {
+    await Promise.all([
+      fetchNotifications(),
+      fetchAnalytics(),
+      fetchSpendingData()
+    ])
+  }
+
+  const fetchAnalytics = async () => {
+    try {
+      const { data, error } = await JobsService.getEmployerAnalytics()
+      if (data && !error) {
+        setAnalytics(data)
+      }
+    } catch (err) {
+      console.error('Error fetching analytics:', err)
+    }
+  }
+
+  const fetchSpendingData = async () => {
+    try {
+      const { data, error } = await JobsService.getEmployerSpendingData()
+      if (data && !error) {
+        setSpendingData(data)
+      }
+    } catch (err) {
+      console.error('Error fetching spending data:', err)
+    }
+  }
 
   const fetchNotifications = async () => {
     try {
@@ -103,7 +167,7 @@ export default function EmployerDashboard() {
 
         {/* Job Completion Notifications */}
         {!loading && notifications.length > 0 && (
-          <div className="max-w-4xl mx-auto mb-8">
+          <div className="max-w-4xl mx-auto mb-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -155,9 +219,117 @@ export default function EmployerDashboard() {
             </Card>
           </div>
         )}
+
+        {/* Analytics Stats */}
+        {!loading && analytics && (
+          <div className="max-w-6xl mx-auto mb-8">
+            {/* Stats and Application Status */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-6">
+              {/* Overview Stats */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-base text-gray-600 dark:text-gray-400">Total Jobs</span>
+                      <span className="text-xl font-bold text-gray-900 dark:text-white">{analytics.totalJobs}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-base text-gray-600 dark:text-gray-400">Active Jobs</span>
+                      <span className="text-xl font-bold text-gray-900 dark:text-white">{analytics.activeJobs}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-base text-gray-600 dark:text-gray-400">Applications</span>
+                      <span className="text-xl font-bold text-gray-900 dark:text-white">{analytics.totalApplications}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-base text-gray-600 dark:text-gray-400">Total Spent</span>
+                      <span className="text-xl font-bold text-gray-900 dark:text-white">${analytics.totalSpent}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Application Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Application Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Pending</span>
+                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                        {analytics.pendingApplications}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Accepted</span>
+                      <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        {analytics.acceptedApplications}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Rejected</span>
+                      <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                        {analytics.rejectedApplications}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Spending Chart */}
+            {spendingData && spendingData.length > 0 && (
+              <div className="mb-6">
+                <SpendingChart data={spendingData} />
+              </div>
+            )}
+
+            {/* Recent Activity */}
+            {analytics.recentActivity.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-purple-600" />
+                    Recent Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analytics.recentActivity.map((activity, index) => (
+                      <div key={index} className="flex items-start gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <div className={`p-2 rounded-full ${
+                          activity.type === 'job_posted' ? 'bg-purple-100 dark:bg-purple-900' :
+                          activity.type === 'application_received' ? 'bg-blue-100 dark:bg-blue-900' :
+                          activity.type === 'employee_rated' ? 'bg-yellow-100 dark:bg-yellow-900' :
+                          'bg-green-100 dark:bg-green-900'
+                        }`}>
+                          {activity.type === 'job_posted' && <Briefcase className="h-4 w-4 text-purple-600" />}
+                          {activity.type === 'application_received' && <Users className="h-4 w-4 text-blue-600" />}
+                          {activity.type === 'employee_rated' && <Star className="h-4 w-4 text-yellow-600" />}
+                          {activity.type === 'job_completed' && <CheckCircle className="h-4 w-4 text-green-600" />}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{activity.message}</p>
+                          <p className="text-xs text-gray-500">{new Date(activity.date).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+
         
         {/* Dashboard Cards with Navigation */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
             <h3 className="text-xl font-semibold mb-4 text-purple-600 dark:text-purple-400">
               Post a Job
@@ -182,20 +354,6 @@ export default function EmployerDashboard() {
             <Link href="/employer/applications">
               <Button className="w-full bg-purple-600 hover:bg-purple-700">
                 View Applications
-              </Button>
-            </Link>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-            <h3 className="text-xl font-semibold mb-4 text-purple-600 dark:text-purple-400">
-              Payment System
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Secure payment processing for completed tasks.
-            </p>
-            <Link href="/employer/payments">
-              <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                Manage Payments
               </Button>
             </Link>
           </div>

@@ -1215,4 +1215,330 @@ export class JobsService {
       return { data: null, error: "An unexpected error occurred" }
     }
   }
+
+  // Employer Analytics Functions
+  static async getEmployerAnalytics(): Promise<{
+    data: {
+      totalJobs: number
+      activeJobs: number
+      completedJobs: number
+      totalApplications: number
+      pendingApplications: number
+      acceptedApplications: number
+      rejectedApplications: number
+      averageEmployeeRating: number
+      totalSpent: number
+      topEmployees: Array<{
+        id: string
+        name: string
+        email: string
+        jobsCompleted: number
+        averageRating: number
+      }>
+      recentActivity: Array<{
+        type: 'job_posted' | 'application_received' | 'job_completed' | 'employee_rated'
+        message: string
+        date: string
+      }>
+    } | null
+    error: string | null
+  }> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !user) {
+        return { data: null, error: "User not authenticated" }
+      }
+
+      // Get all employer's jobs
+      const { data: jobs, error: jobsError } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('employer_id', user.id)
+
+      if (jobsError) {
+        console.error('Error fetching employer jobs:', jobsError)
+        return { data: null, error: jobsError.message }
+      }
+
+      const totalJobs = jobs?.length || 0
+      const activeJobs = jobs?.filter(job => job.status === 'open' || job.status === 'in_progress').length || 0
+      const completedJobs = jobs?.filter(job => job.status === 'completed').length || 0
+
+      // Get all applications for employer's jobs
+      const jobIds = jobs?.map(job => job.id) || []
+      let totalApplications = 0
+      let pendingApplications = 0
+      let acceptedApplications = 0
+      let rejectedApplications = 0
+
+      if (jobIds.length > 0) {
+        const { data: applications } = await supabase
+          .from('job_applications')
+          .select('status, employee_id')
+          .in('job_id', jobIds)
+
+        if (applications) {
+          totalApplications = applications.length
+          pendingApplications = applications.filter(app => app.status === 'pending').length
+          acceptedApplications = applications.filter(app => app.status === 'accepted').length
+          rejectedApplications = applications.filter(app => app.status === 'rejected').length
+        }
+      }
+
+      // Calculate average employee rating given by this employer
+      const { data: ratings } = await supabase
+        .from('employee_ratings')
+        .select('work_quality, availability, friendliness')
+        .eq('employer_id', user.id)
+
+      let averageEmployeeRating = 0
+      if (ratings && ratings.length > 0) {
+        const totalRatings = ratings.length * 3 // 3 categories per rating
+        const sumRatings = ratings.reduce((sum, rating) => 
+          sum + rating.work_quality + rating.availability + rating.friendliness, 0
+        )
+        averageEmployeeRating = Number((sumRatings / totalRatings).toFixed(1))
+      }
+
+      // Calculate total spent on completed jobs
+      const completedJobsList = jobs?.filter(job => job.status === 'completed') || []
+      let totalSpent = 0
+      completedJobsList.forEach(job => {
+        const payMatch = job.pay.match(/\$(\d+)/)
+        if (payMatch) {
+          totalSpent += parseInt(payMatch[1])
+        }
+      })
+
+      // Get top employees based on ratings and job completion
+      let topEmployees: Array<{
+        id: string
+        name: string
+        email: string
+        jobsCompleted: number
+        averageRating: number
+      }> = []
+
+      if (jobIds.length > 0) {
+        const { data: employeeData } = await supabase
+          .from('job_applications')
+          .select(`
+            employee_id,
+            user_profiles!inner (
+              id,
+              full_name,
+              email
+            )
+          `)
+          .in('job_id', jobIds)
+          .eq('status', 'accepted')
+
+        if (employeeData) {
+          const employeeMap = new Map()
+          
+          employeeData.forEach(app => {
+            const profile = (app as any).user_profiles
+            if (profile) {
+              const existing = employeeMap.get(profile.id) || {
+                id: profile.id,
+                name: profile.full_name || 'Unknown',
+                email: profile.email,
+                jobsCompleted: 0,
+                totalRating: 0,
+                ratingCount: 0
+              }
+              existing.jobsCompleted++
+              employeeMap.set(profile.id, existing)
+            }
+          })
+
+          // Add rating data
+          if (ratings) {
+            const { data: ratingDetails } = await supabase
+              .from('employee_ratings')
+              .select('employee_id, work_quality, availability, friendliness')
+              .eq('employer_id', user.id)
+
+            ratingDetails?.forEach(rating => {
+              const employee = employeeMap.get(rating.employee_id)
+              if (employee) {
+                employee.totalRating += rating.work_quality + rating.availability + rating.friendliness
+                employee.ratingCount += 3
+              }
+            })
+          }
+
+          topEmployees = Array.from(employeeMap.values())
+            .map(emp => ({
+              ...emp,
+              averageRating: emp.ratingCount > 0 ? Number((emp.totalRating / emp.ratingCount).toFixed(1)) : 0
+            }))
+            .sort((a, b) => b.jobsCompleted - a.jobsCompleted || b.averageRating - a.averageRating)
+            .slice(0, 5)
+        }
+      }
+
+      // Get recent activity
+      const recentActivity: Array<{
+        type: 'job_posted' | 'application_received' | 'job_completed' | 'employee_rated'
+        message: string
+        date: string
+      }> = []
+
+      // Recent job posts
+      const recentJobs = jobs?.slice(0, 2).map(job => ({
+        type: 'job_posted' as const,
+        message: `Posted job: ${job.title}`,
+        date: job.created_at
+      })) || []
+
+      // Recent applications
+      if (jobIds.length > 0) {
+        const { data: recentApps } = await supabase
+          .from('job_applications')
+          .select(`
+            created_at,
+            jobs!inner (title),
+            user_profiles!inner (full_name, email)
+          `)
+          .in('job_id', jobIds)
+          .order('created_at', { ascending: false })
+          .limit(2)
+
+        const appActivity = recentApps?.map(app => ({
+          type: 'application_received' as const,
+          message: `New application for ${(app as any).jobs.title} from ${(app as any).user_profiles.full_name || (app as any).user_profiles.email}`,
+          date: app.created_at
+        })) || []
+
+        recentActivity.push(...appActivity)
+
+        // Recent employee ratings
+        const { data: recentRatings } = await supabase
+          .from('employee_ratings')
+          .select(`
+            created_at,
+            jobs!inner (title),
+            user_profiles!inner (full_name, email)
+          `)
+          .eq('employer_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(2)
+
+        const ratingActivity = recentRatings?.map(rating => ({
+          type: 'employee_rated' as const,
+          message: `Rated ${(rating as any).user_profiles.full_name || (rating as any).user_profiles.email} for ${(rating as any).jobs.title}`,
+          date: rating.created_at
+        })) || []
+
+        recentActivity.push(...ratingActivity)
+      }
+
+      recentActivity.push(...recentJobs)
+      recentActivity.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+      return {
+        data: {
+          totalJobs,
+          activeJobs,
+          completedJobs,
+          totalApplications,
+          pendingApplications,
+          acceptedApplications,
+          rejectedApplications,
+          averageEmployeeRating,
+          totalSpent,
+          topEmployees,
+          recentActivity: recentActivity.slice(0, 5)
+        },
+        error: null
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      return { data: null, error: "An unexpected error occurred" }
+    }
+  }
+
+  // Get employer spending data for chart
+  static async getEmployerSpendingData(): Promise<{
+    data: Array<{
+      id: string
+      title: string
+      pay: string
+      duration: string | null
+      completed_at: string
+      calculated_spending: number
+    }> | null
+    error: string | null
+  }> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !user) {
+        return { data: null, error: "User not authenticated" }
+      }
+
+      // Get all completed jobs for the employer
+      const { data: jobs, error: jobsError } = await supabase
+        .from('jobs')
+        .select('id, title, pay, duration, updated_at')
+        .eq('employer_id', user.id)
+        .eq('status', 'completed')
+        .order('updated_at', { ascending: true })
+
+      if (jobsError) {
+        console.error('Error fetching completed jobs:', jobsError)
+        return { data: null, error: jobsError.message }
+      }
+
+      if (!jobs) {
+        return { data: [], error: null }
+      }
+
+      // Calculate spending for each job
+      const jobsWithSpending = jobs.map(job => {
+        // Parse pay amount and check if it's hourly
+        const payString = job.pay.toLowerCase()
+        const payMatch = payString.match(/\$(\d+)(?:\s*\/\s*hr)?/)
+        const isHourly = payString.includes('/hr') || payString.includes('per hour')
+        
+        let calculatedSpending = 0
+        
+        if (payMatch) {
+          const baseRate = parseInt(payMatch[1])
+          
+          if (isHourly && job.duration) {
+            // Parse duration (assuming format like "2 hours" or "2.5 hours")
+            const durationMatch = job.duration.match(/(\d+(?:\.\d+)?)\s*hours?/)
+            if (durationMatch) {
+              const hours = parseFloat(durationMatch[1])
+              calculatedSpending = baseRate * hours
+            } else {
+              calculatedSpending = baseRate // Default to base rate if duration parsing fails
+            }
+          } else {
+            calculatedSpending = baseRate // Fixed rate job
+          }
+        }
+
+        return {
+          id: job.id,
+          title: job.title,
+          pay: job.pay,
+          duration: job.duration,
+          completed_at: job.updated_at,
+          calculated_spending: calculatedSpending
+        }
+      })
+
+      return { 
+        data: jobsWithSpending,
+        error: null 
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      return { data: null, error: "An unexpected error occurred" }
+    }
+  }
 } 
