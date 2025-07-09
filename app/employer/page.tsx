@@ -222,9 +222,9 @@ export default function EmployerDashboard() {
 
         {/* Analytics Stats */}
         {!loading && analytics && (
-          <div className="max-w-6xl mx-auto mb-8">
+          <div className="max-w-4xl mx-auto mb-8">
             {/* Stats and Application Status */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               {/* Overview Stats */}
               <Card>
                 <CardHeader>

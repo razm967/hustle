@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, BookmarkCheck, CheckCircle, Clock as ClockIcon, XCircle, Filter, Briefcase, Star, Timer, CheckSquare, CircleDot, Award } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DollarSign, MapPin, Clock, Calendar, ArrowRight, Tag, Bookmark, BookmarkCheck, CheckCircle, Clock as ClockIcon, XCircle, Filter, Briefcase, Star, Timer, CheckSquare, CircleDot, Award, CheckCheck } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { JobsService } from "@/lib/jobs-service"
 import type { JobWithStatus } from "@/lib/database-types"
@@ -14,13 +15,18 @@ import { useFeedback } from "@/components/ui/feedback"
 
 export default function SavedJobsPage() {
   const router = useRouter()
-  const { showSuccess } = useFeedback()
+  const { showSuccess, showError } = useFeedback()
   
   const [savedJobs, setSavedJobs] = useState<JobWithStatus[]>([])
   const [appliedJobs, setAppliedJobs] = useState<JobWithStatus[]>([])
   const [loading, setLoading] = useState(true)
   const [savingJobId, setSavingJobId] = useState<string | null>(null)
   const [applicationFilter, setApplicationFilter] = useState<string>("all")
+  
+  // Job completion state
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false)
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
+  const [completingJob, setCompletingJob] = useState(false)
 
   useEffect(() => {
     loadJobs()
@@ -66,6 +72,42 @@ export default function SavedJobsPage() {
       console.error('Error unsaving job:', error)
     } finally {
       setSavingJobId(null)
+    }
+  }
+
+  // Job completion handlers
+  const handleCompleteJob = (e: React.MouseEvent, jobId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setSelectedJobId(jobId)
+    setShowCompleteDialog(true)
+  }
+
+  const confirmCompleteJob = async () => {
+    if (!selectedJobId) return
+    
+    setCompletingJob(true)
+    try {
+      const { success, error } = await JobsService.completeJob(selectedJobId)
+      
+      if (success) {
+        showSuccess('Job marked as completed successfully!', 'Success')
+        
+        // Add a small delay to ensure database update is complete
+        setTimeout(async () => {
+          await loadJobs()
+        }, 500)
+        
+        setShowCompleteDialog(false)
+        setSelectedJobId(null)
+      } else {
+        showError(`Error completing job: ${error}`, 'Error')
+      }
+    } catch (err) {
+      console.error('Error completing job:', err)
+      showError('An unexpected error occurred', 'Error')
+    } finally {
+      setCompletingJob(false)
     }
   }
 
@@ -118,6 +160,19 @@ export default function SavedJobsPage() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
+            {/* Complete Job Button for accepted applications - only show if job is not completed */}
+            {job.application_result === 'accepted' && job.status !== 'completed' && (
+              <Button
+                onClick={(e) => handleCompleteJob(e, job.id)}
+                size="sm"
+                className="bg-green-600 hover:bg-green-700"
+                title="Mark job as completed"
+              >
+                <CheckCheck className="h-4 w-4 mr-1" />
+                Complete
+              </Button>
+            )}
+            
             {/* Unsave Button for saved jobs */}
             {showUnsaveButton && (
               <Button
@@ -407,6 +462,34 @@ export default function SavedJobsPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Complete Job Confirmation Dialog */}
+      <Dialog open={showCompleteDialog} onOpenChange={setShowCompleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Complete Job</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to mark this job as completed? This will notify the employer and they may rate your performance.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCompleteDialog(false)}
+              disabled={completingJob}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmCompleteJob}
+              disabled={completingJob}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {completingJob ? "Completing..." : "Yes, Complete Job"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

@@ -252,7 +252,15 @@ export default function EmployerApplicationsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {jobApplications.map((application) => (
+                    {jobApplications
+                      .sort((a, b) => {
+                        // Sort by status: pending first, then rejected
+                        if (a.status === 'pending' && b.status === 'rejected') return -1
+                        if (a.status === 'rejected' && b.status === 'pending') return 1
+                        // If same status, sort by creation date (newest first)
+                        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                      })
+                      .map((application) => (
                       <div key={application.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                           <div className="flex items-start space-x-4 flex-1">
